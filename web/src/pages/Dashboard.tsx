@@ -3,6 +3,7 @@ import { BellOff, CheckCircle2, CircleAlert, MapPin, Pause, Play, Radio, SkipFor
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LocationPicker } from '@/components/LocationPicker';
+import { QuickPlay } from '@/components/QuickPlay';
 import { PrayerIcon } from '@/components/icons';
 import { TestPlayDialog } from '@/components/TestPlayDialog';
 import { useAppState, useConfig, useLog, useSaveConfig, useSpeakers } from '@/lib/api';
@@ -166,6 +167,8 @@ export function Dashboard() {
           <Volume2 className="size-4" /> {state.speakerCount} speaker{state.speakerCount === 1 ? '' : 's'}
         </Link>
       </div>
+
+      <QuickPlay />
 
       {/* ───── Today ───── */}
       <section>
