@@ -31,3 +31,18 @@ Data (config, athan files) lives in `./data` (`DATA_DIR`).
 - **AirPlay** playback uses [pyatv](https://pyatv.dev)'s `atvremote` (RAOP); multiple AirPlay speakers are not sample-synchronised. Sonos players that are grouped play together.
 - Athan recordings are not bundled (licensing). Add your own in the Library.
 - Hardware playback (Sonos/Cast/AirPlay/local) is implemented against the libraries' APIs but has only been exercised with simulated speakers so far.
+
+## Automatic deploys (CI/CD)
+`.github/workflows/ci.yml` typechecks, tests and builds every push and pull request. Pushes to `main` then deploy to the Pi through a **self-hosted runner** that lives on the Pi (it only makes outbound connections, so no ports need opening).
+
+One-time setup on the Pi (after running `deploy/install.sh` once):
+1. In GitHub: **Settings → Actions → Runners → New self-hosted runner → Linux / ARM64**, and follow the commands it shows. When asked for labels, add `athan-pi`. Install it as a service (`sudo ./svc.sh install && sudo ./svc.sh start`).
+2. Let the runner user update the app and restart only this service (replace `RUNNER` with the user the runner runs as):
+   ```bash
+   sudo chown -R RUNNER:athan /opt/athan
+   echo 'RUNNER ALL=(root) NOPASSWD: /usr/bin/systemctl restart athan' | sudo tee /etc/sudoers.d/athan-deploy
+   sudo chmod 440 /etc/sudoers.d/athan-deploy
+   ```
+3. Make sure Node 22 is installed on the Pi (the installer does this).
+
+Security: only trusted people should be able to push to `main` (use branch protection), because that code runs on your Pi. The workflow never deploys from pull requests.
