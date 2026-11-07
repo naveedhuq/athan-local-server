@@ -1,8 +1,9 @@
 import type { SpeakerType, SpeakerView } from '@server/api-types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Play, Plus, RefreshCw, Trash2, Wifi, WifiOff } from 'lucide-react';
+import { Pencil, Play, Plus, RefreshCw, Trash2, Volume2, WifiOff } from 'lucide-react';
 import { useState } from 'react';
 import { SPEAKER_META, SpeakerIcon } from '@/components/icons';
+import { SpeakerArt, pickKind } from '@/components/SpeakerArt';
 import { TestPlayDialog } from '@/components/TestPlayDialog';
 import { api, useAppState, useSaveConfig, useSpeakers } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -37,6 +38,7 @@ export function Speakers() {
   };
 
   const speakers = data?.speakers ?? [];
+  const playingIds = new Set(state?.player.status === 'playing' ? state.player.speakers.filter((x) => x.state === 'playing').map((x) => x.id) : []);
   const drivers = data?.drivers ?? {};
 
   return (
@@ -79,9 +81,9 @@ export function Speakers() {
                   <SpeakerIcon type={type} className="size-4" /> {SPEAKER_META[type].plural}
                   <Badge>{list.length}</Badge>
                 </h2>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                   {list.map((s) => (
-                    <SpeakerCard key={s.id} s={s} onTest={() => setTestIds([s.id])} onEdit={() => setEditing(s)} />
+                    <SpeakerCard key={s.id} s={s} playing={playingIds.has(s.id)} onTest={() => setTestIds([s.id])} onEdit={() => setEditing(s)} />
                   ))}
                 </div>
               </section>
@@ -101,44 +103,60 @@ export function Speakers() {
   );
 }
 
-function SpeakerCard({ s, onTest, onEdit }: { s: SpeakerView; onTest: () => void; onEdit: () => void }) {
+const HUE: Record<SpeakerType, string> = { sonos: '#f2b84b', cast: '#4f8df7', airplay: '#a78bfa', local: '#2dd4bf' };
+
+function SpeakerCard({ s, playing, onTest, onEdit }: { s: SpeakerView; playing: boolean; onTest: () => void; onEdit: () => void }) {
   const save = useSaveConfig();
   const set = (patch: { enabled?: boolean; volume?: number }) => save.mutate({ speakers: { [s.id]: patch } });
+  const kind = pickKind(s.type, s.name, s.model);
+  const off = !s.enabled || !s.online;
   return (
-    <Card className={cn('flex min-w-0 flex-col gap-4 p-5 transition', !s.enabled && 'opacity-75')}>
-      <div className="flex items-start gap-3">
-        <div className={cn('flex size-12 shrink-0 items-center justify-center rounded-2xl', s.enabled ? 'bg-accent-soft text-accent' : 'bg-surface-2 text-muted')}>
-          <SpeakerIcon type={s.type} className="size-6" />
+    <Card className={cn('group flex min-w-0 flex-col overflow-hidden p-0 transition hover:-translate-y-0.5', playing && 'ring-2 ring-accent')}>
+      <div
+        className="relative flex h-44 items-center justify-center overflow-hidden"
+        style={{ background: `radial-gradient(90% 90% at 50% 0%, color-mix(in oklab, ${HUE[s.type]} 26%, transparent), transparent 72%), var(--surface-2)` }}
+      >
+        {playing && (
+          <>
+            <span className="ring-wave absolute size-28 rounded-full border-2 border-accent" />
+            <span className="ring-wave absolute size-28 rounded-full border-2 border-accent [animation-delay:.8s]" />
+          </>
+        )}
+        <SpeakerArt kind={kind} size={128} active={playing} dim={off} className="relative drop-shadow-[0_10px_14px_rgba(0,0,0,.28)] transition group-hover:scale-105" />
+        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-surface/80 px-2.5 py-1 text-xs font-medium backdrop-blur">
+          <SpeakerIcon type={s.type} className="size-3.5" style={{ color: HUE[s.type] }} />
+          {SPEAKER_META[s.type].label}
+        </span>
+        <div className="absolute right-3 top-3">
+          <Switch checked={s.enabled} onChange={(v) => set({ enabled: v })} label={`Use ${s.displayName}`} />
         </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate font-semibold">{s.displayName}</h3>
+        <span className={cn('absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-surface/80 px-2.5 py-1 text-xs font-medium backdrop-blur', s.online ? 'text-ok' : 'text-muted')}>
+          <span className={cn('size-1.5 rounded-full', s.online ? 'bg-ok' : 'bg-muted')} />
+          {playing ? 'Playing' : s.online ? 'Online' : 'Not seen recently'}
+        </span>
+        {s.mock && <Badge tone="gold" className="absolute bottom-3 right-3">Demo</Badge>}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-4 p-5">
+        <div className="min-w-0">
+          <h3 className="truncate text-lg font-semibold leading-tight">{s.displayName}</h3>
           <p className="truncate text-xs text-muted">{[s.model, s.type !== 'local' ? s.host : null].filter(Boolean).join(' · ')}</p>
-          <div className="mt-1.5 flex items-center gap-2 text-xs">
-            <span className={cn('inline-flex items-center gap-1.5 font-medium', s.online ? 'text-ok' : 'text-muted')}>
-              {s.online ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
-              {s.online ? 'Online' : 'Not seen recently'}
-            </span>
-            {s.mock && <Badge tone="gold">Demo</Badge>}
-          </div>
         </div>
-        <Switch checked={s.enabled} onChange={(v) => set({ enabled: v })} label={`Use ${s.displayName}`} />
-      </div>
 
-      <div>
-        <div className="mb-1 flex items-center justify-between text-sm">
-          <span className="font-medium">Athan volume</span>
-          <span className="tabular text-muted">{s.volume}%</span>
+        <div className="flex items-center gap-3">
+          <Volume2 className="size-4 shrink-0 text-muted" />
+          <Slider label={`${s.displayName} volume`} value={s.volume} onCommit={(v) => set({ volume: v })} />
+          <span className="w-10 text-right text-sm font-medium tabular">{s.volume}%</span>
         </div>
-        <Slider label={`${s.displayName} volume`} value={s.volume} onCommit={(v) => set({ volume: v })} />
-      </div>
 
-      <div className="flex gap-2">
-        <Button variant="soft" size="sm" className="flex-1" icon={<Play className="size-4 fill-current" />} onClick={onTest}>
-          Test
-        </Button>
-        <IconButton label="Rename or remove" variant="outline" className="size-9" onClick={onEdit}>
-          <Pencil className="size-4" />
-        </IconButton>
+        <div className="mt-auto flex gap-2">
+          <Button variant="soft" size="sm" className="flex-1" icon={<Play className="size-4 fill-current" />} onClick={onTest}>
+            Test
+          </Button>
+          <IconButton label="Rename or remove" variant="outline" className="size-9" onClick={onEdit}>
+            <Pencil className="size-4" />
+          </IconButton>
+        </div>
       </div>
     </Card>
   );
