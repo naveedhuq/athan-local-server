@@ -1,9 +1,9 @@
 import type { Athan } from '@server/api-types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ExternalLink, Link2, Music2, Pause, Pencil, Play, Star, Trash2, Upload } from 'lucide-react';
+import { Check, Download, ExternalLink, Link2, Music2, Pause, Pencil, Play, Star, Trash2, Upload } from 'lucide-react';
 import { useRef, useState, type DragEvent } from 'react';
 import { usePreview } from '@/components/preview';
-import { api, useAthans, useConfig, useSaveConfig } from '@/lib/api';
+import { api, useAthans, useCatalog, useConfig, useSaveConfig, type CatalogItem } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { fmtBytes, fmtDuration, LABEL, PRAYER_LIST } from '@/lib/format';
 import { useToast } from '@/lib/toast';
@@ -159,8 +159,10 @@ export function Library() {
         )}
       </div>
 
+      <Recommended onDone={refresh} />
+
       <section className="mt-10">
-        <SectionTitle title="Where to find athans" hint="Pick recordings you have the right to use." className="mb-4" />
+        <SectionTitle title="More places to find athans" hint="Pick recordings you have the right to use." className="mb-4" />
         <Card className="divide-y divide-line">
           {[
             ['IslamCan – Adhan audio', 'https://www.islamcan.com/audio/adhan/index.shtml', 'Free downloadable adhans from many muezzins, including Makkah and Madinah.'],
@@ -260,5 +262,49 @@ function EditAthan({ a, onClose, onDone }: { a: Athan | null; onClose: () => voi
         <Field label="Muezzin"><Input value={muezzin} onChange={(e) => setMuezzin(e.target.value)} maxLength={80} /></Field>
       </div>
     </Modal>
+  );
+}
+
+function Recommended({ onDone }: { onDone: () => void }) {
+  const { data: items } = useCatalog();
+  const qc = useQueryClient();
+  const toast = useToast();
+  const [busy, setBusy] = useState<string | null>(null);
+  const install = async (c: CatalogItem) => {
+    setBusy(c.id);
+    try {
+      await api(`/catalog/${c.id}/install`, { method: 'POST' });
+      toast.success(`Added “${c.name}”`);
+      qc.invalidateQueries({ queryKey: ['catalog'] });
+      onDone();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+  if (!items?.length) return null;
+  return (
+    <section className="mt-10">
+      <SectionTitle title="Recommended athans" hint="One tap downloads the file to your Pi (needs internet once)." className="mb-4" />
+      <Card className="divide-y divide-line">
+        {items.map((c) => (
+          <div key={c.id} className="flex items-center gap-3 px-5 py-3.5">
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-medium">{c.name}</div>
+              <div className="truncate text-sm text-muted">{[c.muezzin !== c.name ? c.muezzin : null, c.note].filter(Boolean).join(' · ') || 'Athan'}</div>
+            </div>
+            {c.installed ? (
+              <Badge tone="ok"><Check className="size-3" /> Added</Badge>
+            ) : (
+              <Button size="sm" variant="soft" icon={<Download className="size-4" />} onClick={() => install(c)} loading={busy === c.id} disabled={busy !== null}>
+                Add
+              </Button>
+            )}
+          </div>
+        ))}
+      </Card>
+      <p className="mt-3 text-xs text-muted">Source: github.com/abodehq/Athan-MP3. The project doesn’t publish a license, so use these for personal listening at home.</p>
+    </section>
   );
 }

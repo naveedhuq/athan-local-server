@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import os from 'node:os';
 import { z, ZodError } from 'zod';
 import { MAX_BYTES } from './athans.js';
+import { CATALOG } from './catalog.js';
 import { PRAYERS, type Prayer } from './config.js';
 import type { AppContext } from './context.js';
 import { locateByIp, makeLocation, searchPlaces } from './location.js';
@@ -139,6 +140,21 @@ export async function registerApi(app: FastifyInstance, ctx: AppContext) {
     const item = await library.addFromStream(file.file, file.filename, name);
     if (muezzin) library.update(item.id, { muezzin });
     return library.get(item.id);
+  });
+  app.get('/api/catalog', async () => {
+    const have = new Set(library.list().map((a) => a.sourceUrl));
+    return CATALOG.map((c) => ({ ...c, installed: have.has(c.url) }));
+  });
+  app.post('/api/catalog/:id/install', async (req) => {
+    const { id } = req.params as { id: string };
+    const c = CATALOG.find((x) => x.id === id);
+    if (!c) throw httpError(404, 'Unknown catalog entry');
+    if (library.list().some((a) => a.sourceUrl === c.url)) throw httpError(409, 'Already in your library');
+    try {
+      return await library.addFromUrl(c.url, c.name, c.muezzin);
+    } catch (err) {
+      throw httpError(502, `Download failed: ${(err as Error).message}. Check the Pi's internet connection.`);
+    }
   });
   app.post('/api/athans/from-url', async (req) => {
     const b = z.object({ url: z.url(), name: z.string().max(80).optional(), muezzin: z.string().max(80).nullable().optional() }).parse(req.body);

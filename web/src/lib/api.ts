@@ -26,6 +26,15 @@ export const useConfig = () => useQuery({ queryKey: ['config'], queryFn: () => a
 export const useSpeakers = () =>
   useQuery({ queryKey: ['speakers'], queryFn: () => api<{ speakers: SpeakerView[]; drivers: Record<string, DriverStatus> }>('/speakers'), refetchInterval: 20_000 });
 export const useAthans = () => useQuery({ queryKey: ['athans'], queryFn: () => api<Athan[]>('/athans') });
+export interface CatalogItem {
+  id: string;
+  name: string;
+  muezzin: string;
+  note?: string;
+  url: string;
+  installed: boolean;
+}
+export const useCatalog = () => useQuery({ queryKey: ['catalog'], queryFn: () => api<CatalogItem[]>('/catalog'), staleTime: 60_000 });
 export const useLog = () => useQuery({ queryKey: ['log'], queryFn: () => api<LogEntry[]>('/log') });
 export const useSystem = () => useQuery({ queryKey: ['system'], queryFn: () => api<SystemInfo>('/system') });
 export const useMethods = () => useQuery({ queryKey: ['methods'], queryFn: () => api<MethodView[]>('/methods'), staleTime: Infinity });
