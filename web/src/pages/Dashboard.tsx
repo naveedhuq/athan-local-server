@@ -184,21 +184,26 @@ export function Dashboard() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_21rem] xl:gap-8">
         <div className="min-w-0 space-y-6 lg:space-y-8">
           <QuickPlay />
-          <section>
-            <SectionTitle title="Recent activity" hint="Everything the server did lately." className="mb-4" />
-            <Card className="divide-y divide-line overflow-hidden">
+          <Card className="overflow-hidden">
+            <div className="p-5 pb-3 sm:px-6">
+              <h2 className="text-lg font-semibold tracking-tight">Recent activity</h2>
+              <p className="mt-0.5 text-sm text-muted">Everything the server did lately.</p>
+            </div>
+            <div className="divide-y divide-line border-t border-line">
               {events.length === 0 ? (
                 <div className="p-6 text-center text-sm text-muted">Nothing yet. Played and skipped athans will show up here.</div>
               ) : (
                 events.slice(0, 6).map((e) => <LogRow key={e.id} e={e} />)
               )}
-            </Card>
+            </div>
             {sp && sp.speakers.length === 0 && (
-              <Notice className="mt-4">
-                No speakers found yet. Make sure this server and your speakers are on the same network, then open <Link to="/speakers" className="font-medium text-accent underline">Speakers</Link> to scan.
-              </Notice>
+              <div className="border-t border-line p-4">
+                <Notice>
+                  No speakers found yet. Make sure this server and your speakers are on the same network, then open <Link to="/speakers" className="font-medium text-accent underline">Speakers</Link> to scan.
+                </Notice>
+              </div>
             )}
-          </section>
+          </Card>
         </div>
 
         <aside className="min-w-0 space-y-6 xl:sticky xl:top-6 xl:self-start">

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { api, useAppState, useAthans, useConfig, useSpeakers } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { useToast } from '@/lib/toast';
-import { Button, Card, Equalizer, SectionTitle } from '@/ui';
+import { Button, Card, Equalizer } from '@/ui';
 import { SpeakerArt, pickKind, type ArtKind } from './SpeakerArt';
 import { AthanSelect } from './pickers';
 
@@ -55,13 +55,17 @@ export function QuickPlay() {
   const activeIds = new Set(playing?.speakers.filter((s) => s.state === 'playing').map((s) => s.id));
 
   return (
-    <section>
-      <SectionTitle title="Play on a speaker" hint="Pick an athan, then tap a speaker to play it there right now." className="mb-4" />
-      <Card className="space-y-5 p-5">
-        <div className="max-w-xl">
+    <Card className="p-5 sm:p-6">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold tracking-tight">Play on a speaker</h2>
+          <p className="mt-0.5 text-sm text-muted">Pick an athan, then tap a speaker to play it there right now.</p>
+        </div>
+        <div className="w-full sm:w-72">
           <AthanSelect athans={athans} value={athanId} onChange={choose} />
         </div>
-
+      </div>
+      <div className="space-y-5">
         {speakers.length === 0 ? (
           <p className="text-sm text-muted">No speakers found yet. Open the Speakers page to scan.</p>
         ) : (
@@ -107,7 +111,7 @@ export function QuickPlay() {
             Play on all enabled speakers
           </Button>
         )}
-      </Card>
-    </section>
+      </div>
+    </Card>
   );
 }

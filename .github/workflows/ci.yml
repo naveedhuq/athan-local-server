@@ -25,6 +25,30 @@ jobs:
         env:
           DATA_DIR: ${{ runner.temp }}/athan-data
       - run: npm run build
+      - name: Package and smoke-test the release bundle
+        run: |
+          node scripts/make-bundle.mjs --skip-build
+          node scripts/smoke-test.mjs
+
+  # Prove the bundle really runs on macOS and Windows (only on the default branch, tags and manual runs).
+  cross-platform:
+    name: Bundle on ${{ matrix.os }}
+    if: github.event_name != 'pull_request'
+    needs: ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node scripts/make-bundle.mjs
+      - run: node scripts/smoke-test.mjs
 
   deploy:
     name: Deploy to Raspberry Pi

@@ -1,0 +1,34 @@
+name: Release
+
+# Push a tag like v1.0.0 to publish downloadable bundles (Windows / macOS / Linux) and a versioned Docker image.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node scripts/make-bundle.mjs
+      - run: node scripts/smoke-test.mjs
+      - name: Package
+        run: |
+          NAME="athan-server-${GITHUB_REF_NAME:-dev}"
+          tar -czf "$NAME.tar.gz" -C release athan-server
+          (cd release && zip -qr "../$NAME.zip" athan-server)
+          ls -lh athan-server-*
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" athan-server-*.tar.gz athan-server-*.zip --generate-notes --title "$GITHUB_REF_NAME"

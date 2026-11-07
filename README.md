@@ -1,6 +1,6 @@
 # Athan Local Server
 
-A self-hosted athan (adhan) server for a Raspberry Pi. It calculates prayer times for your location and plays the call to prayer on your **Sonos**, **Google Cast / Nest**, **AirPlay** speakers, or the Pi's own audio output. Everything is controlled from a responsive web UI.
+A self-hosted athan (adhan) server for any always-on computer: Raspberry Pi, PC, Mac, NAS or home server, with or without Docker. It calculates prayer times for your location and plays the call to prayer on your **Sonos**, **Google Cast / Nest**, **AirPlay** speakers, or the computer's own audio output. Everything is controlled from a responsive web UI.
 
 ## Features
 - **Speakers**: automatic discovery (Sonos via SSDP, Cast and AirPlay via mDNS), manual add by IP, per-speaker enable/volume/nickname, multiple speakers at once. Sonos and Cast return to what they were playing afterwards.
@@ -10,12 +10,17 @@ A self-hosted athan (adhan) server for a Raspberry Pi. It calculates prayer time
 - **Athan library**: upload audio, or download from a link; preview in the browser.
 - **Quiet hours, pause/snooze, master switch**, **MQTT + Home Assistant discovery**, **webhooks** (ntfy etc.).
 
-## Install on the Pi
+## Install
+Run it on any always-on computer on the same network as your speakers: Raspberry Pi, PC, Mac, NAS or home server. Details, networking rules and troubleshooting are in **[docs/INSTALL.md](docs/INSTALL.md)**.
+
 ```bash
-git clone <this repo> && cd athan-local-server
-sudo ./deploy/install.sh        # installs Node 22, mpv, pyatv, builds, enables systemd service
+# Docker (Linux / NAS / Raspberry Pi) – amd64 and arm64
+docker compose up -d
 ```
-Open `http://<pi-address>:8080`. Or with Docker: `docker compose up -d` (host networking is required for discovery).
+- **Without Docker:** download the release bundle for Windows, macOS or Linux (needs Node.js 20+), run `node athan.mjs`, and optionally install it as a service with the scripts in `service/`.
+- **Raspberry Pi / Debian from source:** `sudo ./deploy/install.sh`
+
+Then open `http://<computer-address>:8080`.
 
 ## Development
 ```bash
@@ -27,6 +32,7 @@ Data (config, athan files) lives in `./data` (`DATA_DIR`).
 
 ## Notes and limits
 - No login: keep it on your LAN.
+- Speaker discovery needs multicast on the same network. Docker needs host networking (Linux); on macOS/Windows Docker Desktop use a native install or add speakers by IP.
 - Speakers fetch audio from `http://<pi-ip>:8080/audio/...`; set a *Public address override* in Settings if the wrong IP is detected.
 - **AirPlay** playback uses [pyatv](https://pyatv.dev)'s `atvremote` (RAOP); multiple AirPlay speakers are not sample-synchronised. Sonos players that are grouped play together.
 - Athan recordings are not bundled (licensing). Add your own in the Library.

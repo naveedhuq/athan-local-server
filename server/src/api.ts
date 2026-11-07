@@ -40,6 +40,8 @@ export async function registerApi(app: FastifyInstance, ctx: AppContext) {
     };
   };
 
+  app.get('/api/health', async () => ({ ok: true, version: ctx.version }));
+
   /* ───────────── dashboard state ───────────── */
   app.get('/api/state', async () => {
     const cfg = store.get();

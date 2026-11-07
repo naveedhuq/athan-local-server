@@ -1,12 +1,24 @@
+# Recommended on a Linux server, NAS or Raspberry Pi.
+#   docker compose up -d
+#
+# Host networking lets the container discover Sonos / Google Cast / AirPlay speakers
+# (they use multicast, which does not cross Docker's bridge network).
+# Docker Desktop on macOS/Windows does NOT support host networking for this:
+# use docker-compose.bridge.yml, or install natively (see README).
 services:
   athan:
+    image: ghcr.io/naveedhuq/athan-local-server:latest
     build: .
-    # host networking is required so mDNS/SSDP speaker discovery works
+    container_name: athan
     network_mode: host
     restart: unless-stopped
+    environment:
+      PORT: "8080"
+      TZ: ${TZ:-UTC}
     volumes:
       - athan-data:/data
-    devices:
-      - /dev/snd:/dev/snd   # optional: Pi's own audio output
+    # Play through this machine's own speakers? Build with WITH_LOCAL_AUDIO=1 and uncomment:
+    # devices: ["/dev/snd:/dev/snd"]
+    # group_add: ["audio"]
 volumes:
   athan-data:

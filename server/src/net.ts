@@ -12,6 +12,7 @@ export function lanAddress(): string {
 }
 
 export function baseUrl(cfg: Config, port: number): string {
-  const custom = cfg.server.publicUrl?.trim();
+  // PUBLIC_URL (env) wins: containers can't see the host's LAN address themselves.
+  const custom = process.env.PUBLIC_URL?.trim() || cfg.server.publicUrl?.trim();
   return (custom ? custom : `http://${lanAddress()}:${port}`).replace(/\/+$/, '');
 }
