@@ -1,0 +1,9 @@
+{
+  "name": "Athan Server",
+  "short_name": "Athan",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c1a1c",
+  "theme_color": "#0c1a1c",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

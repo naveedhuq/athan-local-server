@@ -1,0 +1,12 @@
+services:
+  athan:
+    build: .
+    # host networking is required so mDNS/SSDP speaker discovery works
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - athan-data:/data
+    devices:
+      - /dev/snd:/dev/snd   # optional: Pi's own audio output
+volumes:
+  athan-data:

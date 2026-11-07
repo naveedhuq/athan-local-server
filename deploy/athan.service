@@ -1,0 +1,21 @@
+[Unit]
+Description=Athan server
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=athan
+WorkingDirectory=/opt/athan
+Environment=NODE_ENV=production
+Environment=PORT=8080
+Environment=DATA_DIR=/var/lib/athan
+Environment=WEB_DIR=/opt/athan/web/dist
+ExecStart=/usr/bin/node /opt/athan/server/dist/index.js
+Restart=always
+RestartSec=5
+# needed for local audio output
+SupplementaryGroups=audio
+
+[Install]
+WantedBy=multi-user.target
