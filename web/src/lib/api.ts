@@ -40,6 +40,9 @@ export const useSystem = () => useQuery({ queryKey: ['system'], queryFn: () => a
 export const useMethods = () => useQuery({ queryKey: ['methods'], queryFn: () => api<MethodView[]>('/methods'), staleTime: Infinity });
 export const useTimes = (date?: string) => useQuery({ queryKey: ['times', date], queryFn: () => api<DayTimes | null>(`/times${date ? `?date=${date}` : ''}`) });
 
+export const useMonth = (year: number, month: number, enabled = true) =>
+  useQuery({ queryKey: ['times-month', year, month], queryFn: () => api<DayTimes[]>(`/times/month?year=${year}&month=${month}`), enabled, staleTime: 5 * 60_000 });
+
 function merge<T>(base: T, patch: unknown): T {
   const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
   if (!isObj(base) || !isObj(patch)) return (patch === undefined ? base : patch) as T;
@@ -68,6 +71,7 @@ export function useSaveConfig() {
       qc.invalidateQueries({ queryKey: ['config'] });
       qc.invalidateQueries({ queryKey: ['state'] });
       qc.invalidateQueries({ queryKey: ['times'] });
+      qc.invalidateQueries({ queryKey: ['times-month'] });
       qc.invalidateQueries({ queryKey: ['speakers'] });
     },
   });

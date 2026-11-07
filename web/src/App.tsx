@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { CalendarClock, Home, Library as LibraryIcon, Moon as MoonIcon, Settings as SettingsIcon, Speaker, WifiOff } from 'lucide-react';
+import { CalendarClock, CalendarDays, Home, Library as LibraryIcon, Moon as MoonIcon, Settings as SettingsIcon, Speaker, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { NowPlayingBar } from '@/components/NowPlayingBar';
 import { useAppState } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { Calendar } from '@/pages/Calendar';
 import { Dashboard } from '@/pages/Dashboard';
 import { Library } from '@/pages/Library';
 import { Prayers } from '@/pages/Prayers';
@@ -14,6 +15,7 @@ import { Speakers } from '@/pages/Speakers';
 const NAV = [
   { to: '/', label: 'Today', Icon: Home },
   { to: '/prayers', label: 'Prayers', Icon: CalendarClock },
+  { to: '/calendar', label: 'Calendar', Icon: CalendarDays },
   { to: '/speakers', label: 'Speakers', Icon: Speaker },
   { to: '/library', label: 'Library', Icon: LibraryIcon },
   { to: '/settings', label: 'Settings', Icon: SettingsIcon },
@@ -107,6 +109,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/prayers" element={<Prayers />} />
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="/speakers" element={<Speakers />} />
           <Route path="/library" element={<Library />} />
           <Route path="/settings" element={<Settings />} />
@@ -118,13 +121,13 @@ export default function App() {
 
       {/* Mobile bottom tab bar */}
       <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/90 backdrop-blur-xl lg:hidden" aria-label="Main">
-        <ul className="mx-auto grid max-w-xl grid-cols-5">
+        <ul className="mx-auto grid max-w-xl grid-cols-6">
           {NAV.map(({ to, label, Icon }) => (
             <li key={to}>
-              <NavLink to={to} end={to === '/'} className={({ isActive }) => cn('flex h-[4.25rem] flex-col items-center justify-center gap-1 text-[11px] font-medium transition', isActive ? 'text-accent' : 'text-muted')}>
+              <NavLink to={to} end={to === '/'} className={({ isActive }) => cn('flex h-[4.25rem] flex-col items-center justify-center gap-1 text-[10px] font-medium transition', isActive ? 'text-accent' : 'text-muted')}>
                 {({ isActive }) => (
                   <>
-                    <span className={cn('flex h-7 w-12 items-center justify-center rounded-full transition', isActive && 'bg-accent-soft')}>
+                    <span className={cn('flex h-7 w-11 items-center justify-center rounded-full transition', isActive && 'bg-accent-soft')}>
                       <Icon className="size-5" />
                     </span>
                     {label}

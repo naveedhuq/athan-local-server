@@ -70,6 +70,15 @@ describe('PrayerTimeService', () => {
     expect(fixed?.times.isha).toEqual({ time: '2026-07-02T01:45:00.000Z', fixed: true });
   });
 
+  it('stops retrying the online source for a while after it fails', async () => {
+    const store = tmpStore();
+    store.update({ location: nyc, calculation: { sources: ['aladhan', 'offline'], method: 'isna' } });
+    let calls = 0;
+    const svc = new PrayerTimeService(store, { aladhan: () => { calls++; return Promise.reject(new Error('down')); } });
+    for (const d of ['2026-07-01', '2026-07-02', '2026-07-03']) await svc.getDay(d);
+    expect(calls).toBe(1);
+  });
+
   it('finds the next prayer, rolling over to tomorrow after Isha', async () => {
     const store = tmpStore();
     store.update({ location: nyc, calculation: { sources: ['offline'], method: 'isna' } });

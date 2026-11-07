@@ -26,6 +26,7 @@ export function QuickPlay() {
   const qc = useQueryClient();
   const toast = useToast();
   const [athanId, setAthanId] = useState<string | null>(read);
+  const [all, setAll] = useState(false);
 
   // Fall back to the default athan if nothing (valid) is remembered.
   const valid = athans.some((a) => a.id === athanId);
@@ -65,7 +66,7 @@ export function QuickPlay() {
           <p className="text-sm text-muted">No speakers found yet. Open the Speakers page to scan.</p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {speakers.map((s) => {
+            {(all ? speakers : speakers.slice(0, 6)).map((s) => {
               const active = activeIds.has(s.id);
               return (
                 <button
@@ -96,6 +97,11 @@ export function QuickPlay() {
           </div>
         )}
 
+        {speakers.length > 6 && (
+          <Button variant="ghost" size="sm" className="mr-2" onClick={() => setAll((v) => !v)}>
+            {all ? 'Show fewer' : `Show all ${speakers.length} speakers`}
+          </Button>
+        )}
         {speakers.length > 1 && (
           <Button variant="outline" size="sm" onClick={() => play.mutate(undefined)} disabled={!athanId} loading={play.isPending && play.variables === undefined}>
             Play on all enabled speakers

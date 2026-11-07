@@ -62,6 +62,25 @@ export async function registerApi(app: FastifyInstance, ctx: AppContext) {
     return times.getDay(q.date);
   });
 
+  app.get('/api/times/month', async (req) => {
+    const q = z.object({ year: z.coerce.number().int().min(2000).max(2100), month: z.coerce.number().int().min(1).max(12) }).parse(req.query);
+    const count = new Date(Date.UTC(q.year, q.month, 0)).getUTCDate();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const keys = Array.from({ length: count }, (_, i) => `${q.year}-${pad(q.month)}-${pad(i + 1)}`);
+    const out: Array<Awaited<ReturnType<typeof times.getDay>>> = new Array(keys.length);
+    let next = 0;
+    // A few at a time: fast enough, gentle on the online API.
+    await Promise.all(
+      Array.from({ length: 6 }, async () => {
+        while (next < keys.length) {
+          const i = next++;
+          out[i] = await times.getDay(keys[i]);
+        }
+      }),
+    );
+    return out.filter(Boolean);
+  });
+
   /* ───────────── config ───────────── */
   app.get('/api/config', async () => store.getPublic());
   app.put('/api/config', async (req) => {

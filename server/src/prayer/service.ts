@@ -15,6 +15,8 @@ const cacheFile = path.join(CACHE_DIR, 'times.json');
 
 export class PrayerTimeService {
   private memory = new Map<string, { source: SourceId; times: Record<TimeName, string> }>();
+  /** After the online source fails, skip it for a while so a month view doesn't wait on 30 timeouts. */
+  private onlineDownUntil = 0;
   private providers: Record<SourceId, Provider> = { aladhan: aladhanProvider, offline: offlineProvider };
 
   constructor(private readonly store: ConfigStore, providers?: Partial<Record<SourceId, Provider>>) {
@@ -33,11 +35,11 @@ export class PrayerTimeService {
     }
   }
 
-  private saveDisk(today: string) {
-    // keep only recent days
-    for (const key of this.memory.keys()) {
-      const day = key.split('|')[0];
-      if (day < addDays(today, -2)) this.memory.delete(key);
+  private saveDisk() {
+    // bound the cache: keep the most recent ~400 days
+    if (this.memory.size > 400) {
+      const oldest = [...this.memory.keys()].sort().slice(0, this.memory.size - 400);
+      for (const k of oldest) this.memory.delete(k);
     }
     try {
       writeFileSync(cacheFile, JSON.stringify(Object.fromEntries(this.memory)));
@@ -60,14 +62,20 @@ export class PrayerTimeService {
     }
     const warnings: string[] = [];
     for (const src of calc.sources) {
+      if (src === 'aladhan' && Date.now() < this.onlineDownUntil) {
+        warnings.push('aladhan: unreachable a moment ago, skipped');
+        continue;
+      }
       try {
         const res = await this.providers[src]({ date, location: loc, calc });
         if (src === 'aladhan') {
+          this.onlineDownUntil = 0;
           this.memory.set(key, { source: 'aladhan', times: serialize(res.times) });
-          this.saveDisk(date);
+          this.saveDisk();
         }
         return { source: res.source, times: res.times, warnings };
       } catch (err) {
+        if (src === 'aladhan') this.onlineDownUntil = Date.now() + 2 * 60_000;
         warnings.push(`${src}: ${(err as Error).message}`);
       }
     }
