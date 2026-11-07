@@ -33,7 +33,7 @@ Data (config, athan files) lives in `./data` (`DATA_DIR`).
 - Hardware playback (Sonos/Cast/AirPlay/local) is implemented against the libraries' APIs but has only been exercised with simulated speakers so far.
 
 ## Automatic deploys (CI/CD)
-`.github/workflows/ci.yml` typechecks, tests and builds every push and pull request. Pushes to `main` then deploy to the Pi through a **self-hosted runner** that lives on the Pi (it only makes outbound connections, so no ports need opening).
+`.github/workflows/ci.yml` typechecks, tests and builds every push and pull request. Pushes to the default branch then deploy to the Pi through a **self-hosted runner** that lives on the Pi (it only makes outbound connections, so no ports need opening).
 
 One-time setup on the Pi (after running `deploy/install.sh` once):
 1. In GitHub: **Settings → Actions → Runners → New self-hosted runner → Linux / ARM64**, and follow the commands it shows. When asked for labels, add `athan-pi`. Install it as a service (`sudo ./svc.sh install && sudo ./svc.sh start`).
@@ -45,4 +45,4 @@ One-time setup on the Pi (after running `deploy/install.sh` once):
    ```
 3. Make sure Node 22 is installed on the Pi (the installer does this).
 
-Security: only trusted people should be able to push to `main` (use branch protection), because that code runs on your Pi. The workflow never deploys from pull requests.
+Security: only trusted people should be able to push to the default branch (use branch protection), because that code runs on your Pi. The workflow never deploys from pull requests.
