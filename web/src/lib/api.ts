@@ -21,6 +21,18 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
 /** Recursively make every field optional – the shape accepted by PUT /api/config. */
 export type DeepPartial<T> = T extends object ? (T extends unknown[] ? T : { [K in keyof T]?: DeepPartial<T[K]> }) : T;
 
+/** Hijri day adjustment (−2…+2) the user chose to match local moon sighting. */
+export const useHijriAdjust = () => useConfig().data?.calendar.hijriAdjust ?? 0;
+export interface SyncStatus {
+  enabled: boolean;
+  time: string;
+  timezone: string;
+  running: boolean;
+  nextRun: string | null;
+  lastRun: { at: string; trigger: string; ok: boolean; summary: string; details: string[]; durationMs: number } | null;
+}
+export const useSync = () =>
+  useQuery({ queryKey: ['sync'], queryFn: () => api<SyncStatus>('/sync'), refetchInterval: (q) => (q.state.data?.running ? 1500 : 60_000) });
 export const useAppState = () => useQuery({ queryKey: ['state'], queryFn: () => api<AppState>('/state'), refetchInterval: 30_000 });
 export const useConfig = () => useQuery({ queryKey: ['config'], queryFn: () => api<Config>('/config') });
 export const useSpeakers = () =>

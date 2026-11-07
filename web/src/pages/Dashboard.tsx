@@ -8,7 +8,7 @@ import { UpcomingEvents } from '@/components/UpcomingEvents';
 import { useAppState, useConfig, useLog, useSaveConfig, useSpeakers } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { ARABIC, LABEL, TIME_LIST, countdown, fmtDateLong, fmtTime, humanDuration, relative } from '@/lib/format';
-import { eventsFor, hijriLabel, hijriOf, isRamadan } from '@/lib/hijri';
+import { eventsFor, hijriLabel, hijriOf, isRamadan } from '@server/hijri';
 import { useNow } from '@/lib/hooks';
 import { usePrefs } from '@/lib/prefs';
 import { useToast } from '@/lib/toast';
@@ -63,7 +63,7 @@ export function Dashboard() {
   const cd = countdown(nextMs);
   const date = new Date(now);
   const todayKey = today?.date ?? new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(date);
-  const hijri = hijriOf(todayKey);
+  const hijri = hijriOf(todayKey, cfg.calendar.hijriAdjust);
   const todaysEvents = eventsFor(hijri);
   const paused = !!state.pausedUntil;
 

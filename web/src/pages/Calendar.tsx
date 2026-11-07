@@ -4,10 +4,10 @@ import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { KIND_STYLE, UpcomingEvents } from '@/components/UpcomingEvents';
 import { PrayerIcon } from '@/components/icons';
-import { useAppState, useConfig, useMonth } from '@/lib/api';
+import { useAppState, useConfig, useHijriAdjust, useMonth } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { ARABIC, LABEL, TIME_LIST, fmtTime } from '@/lib/format';
-import { eventsFor, hijriLabel, hijriOf, HIJRI_MONTHS, isRamadan } from '@/lib/hijri';
+import { eventsFor, hijriLabel, hijriOf, HIJRI_MONTHS, isRamadan } from '@server/hijri';
 import { usePrefs } from '@/lib/prefs';
 import { Badge, Button, Card, Empty, IconButton, PageHeader, Segmented, Skeleton } from '@/ui';
 
@@ -49,8 +49,9 @@ export function Calendar() {
   const daysInMonth = new Date(Date.UTC(cur.y, cur.m, 0)).getUTCDate();
   const lead = first.getUTCDay();
   const monthName = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(first);
-  const h1 = hijriOf(key(cur.y, cur.m, 1));
-  const h2 = hijriOf(key(cur.y, cur.m, daysInMonth));
+  const adj = cfg?.calendar.hijriAdjust ?? 0;
+  const h1 = hijriOf(key(cur.y, cur.m, 1), adj);
+  const h2 = hijriOf(key(cur.y, cur.m, daysInMonth), adj);
   const hijriRange = h1.month === h2.month ? `${HIJRI_MONTHS[h1.month - 1]} ${h1.year} AH` : `${HIJRI_MONTHS[h1.month - 1]} – ${HIJRI_MONTHS[h2.month - 1]} ${h2.year} AH`;
 
   const go = (delta: number) => {
@@ -120,7 +121,8 @@ export function Calendar() {
 }
 
 function DayCell({ k, day, isToday, isSel, loading, fmt, onSelect }: { k: string; day?: DayTimes; isToday: boolean; isSel: boolean; loading: boolean; fmt: (iso: string) => string; onSelect: () => void }) {
-  const h = hijriOf(k);
+  const adj = useHijriAdjust();
+  const h = hijriOf(k, adj);
   const events = eventsFor(h);
   const wd = new Date(`${k}T12:00:00Z`).getUTCDay();
   const ram = isRamadan(h);
@@ -164,7 +166,8 @@ function DayCell({ k, day, isToday, isSel, loading, fmt, onSelect }: { k: string
 }
 
 function DayDetail({ k, day, fmt, isToday, prayers }: { k: string; day?: DayTimes; fmt: (iso: string) => string; isToday: boolean; prayers?: Record<string, { enabled: boolean }> }) {
-  const h = hijriOf(k);
+  const adj = useHijriAdjust();
+  const h = hijriOf(k, adj);
   const events = eventsFor(h);
   const date = new Date(`${k}T12:00:00Z`);
   const ramadan = isRamadan(h);
@@ -228,6 +231,7 @@ function DayDetail({ k, day, fmt, isToday, prayers }: { k: string; day?: DayTime
 }
 
 function TimesTable({ cur, days, loading, todayKey, activeKey, fmt, onSelect }: { cur: { y: number; m: number }; days: DayTimes[]; loading: boolean; todayKey: string; activeKey: string; fmt: (iso: string) => string; onSelect: (k: string) => void }) {
+  const adj = useHijriAdjust();
   if (loading) return <Skeleton className="h-[34rem]" />;
   return (
     <Card className="overflow-hidden">
@@ -241,7 +245,7 @@ function TimesTable({ cur, days, loading, todayKey, activeKey, fmt, onSelect }: 
           </thead>
           <tbody>
             {days.map((d) => {
-              const h = hijriOf(d.date);
+              const h = hijriOf(d.date, adj);
               const ev = eventsFor(h)[0];
               const wd = new Date(`${d.date}T12:00:00Z`).getUTCDay();
               const isToday = d.date === todayKey;

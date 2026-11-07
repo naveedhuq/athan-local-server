@@ -1,7 +1,8 @@
 import { CalendarDays } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/cn';
-import { hijriLabel, upcomingEvents, type IslamicEvent } from '@/lib/hijri';
+import { hijriLabel, upcomingEvents, type IslamicEvent } from '@server/hijri';
+import { useHijriAdjust } from '@/lib/api';
 import { Card } from '@/ui';
 
 export const KIND_STYLE: Record<IslamicEvent['kind'], string> = {
@@ -12,7 +13,8 @@ export const KIND_STYLE: Record<IslamicEvent['kind'], string> = {
 
 /** The next few Islamic events with a countdown. Either links to the calendar or calls onPick. */
 export function UpcomingEvents({ todayKey, limit = 5, onPick, className }: { todayKey: string; limit?: number; onPick?: (date: string) => void; className?: string }) {
-  const items = upcomingEvents(todayKey, limit);
+  const adj = useHijriAdjust();
+  const items = upcomingEvents(todayKey, limit, adj);
   return (
     <Card className={cn('p-5', className)}>
       <div className="mb-3 flex items-center justify-between">

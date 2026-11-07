@@ -36,9 +36,9 @@ export class PrayerTimeService {
   }
 
   private saveDisk() {
-    // bound the cache: keep the most recent ~400 days
-    if (this.memory.size > 400) {
-      const oldest = [...this.memory.keys()].sort().slice(0, this.memory.size - 400);
+    // bound the cache: keep the most recent ~800 day entries
+    if (this.memory.size > 800) {
+      const oldest = [...this.memory.keys()].sort().slice(0, this.memory.size - 800);
       for (const k of oldest) this.memory.delete(k);
     }
     try {
@@ -53,11 +53,11 @@ export class PrayerTimeService {
   }
 
   /** Raw (pre-offset) times for a calendar day, trying each configured source in order. */
-  private async raw(date: string, loc: Location, calc: Config['calculation']): Promise<{ source: SourceId | 'cache'; times: RawTimes; warnings: string[] }> {
+  private async raw(date: string, loc: Location, calc: Config['calculation'], force = false): Promise<{ source: SourceId | 'cache'; times: RawTimes; warnings: string[] }> {
     const key = this.cacheKey(date, loc, calc);
     const hit = this.memory.get(key);
     // An online result is authoritative and cached; offline results are cheap to recompute.
-    if (hit && hit.source === 'aladhan') {
+    if (!force && hit && hit.source === 'aladhan') {
       return { source: 'cache', times: revive(hit.times), warnings: [] };
     }
     const warnings: string[] = [];
@@ -85,12 +85,12 @@ export class PrayerTimeService {
     return { source: res.source, times: res.times, warnings };
   }
 
-  async getDay(date?: string): Promise<DayTimes | null> {
+  async getDay(date?: string, opts: { force?: boolean } = {}): Promise<DayTimes | null> {
     const cfg = this.store.get();
     const loc = cfg.location;
     if (!loc) return null;
     const day = date ?? dateKey(new Date(), loc.timezone);
-    const { source, times, warnings } = await this.raw(day, loc, cfg.calculation);
+    const { source, times, warnings } = await this.raw(day, loc, cfg.calculation, !!opts.force);
 
     const out = {} as DayTimes['times'];
     for (const name of TIME_NAMES) {
@@ -107,6 +107,38 @@ export class PrayerTimeService {
       out[name] = { time: when.toISOString(), fixed: !!fixed };
     }
     return { date: day, timezone: loc.timezone, source, warnings, times: out };
+  }
+
+  /**
+   * Prepare `days` days from `startKey` (used by the daily sync). The first `forceFirst` days are re-fetched
+   * ignoring cached online results; later days are only fetched when missing, to stay gentle on the online API.
+   * Reports how many days came from the online source vs. offline calculation.
+   */
+  async refreshRange(startKey: string, days: number, forceFirst = 35): Promise<{ days: number; online: number; offline: number; onlineFailed: boolean; firstWarning: string | null }> {
+    const wantsOnline = this.store.get().calculation.sources.includes('aladhan');
+    this.onlineDownUntil = 0; // give the network a fresh chance
+    const keys = Array.from({ length: days }, (_, i) => addDays(startKey, i));
+    let online = 0;
+    let offline = 0;
+    let onlineFailed = false;
+    let firstWarning: string | null = null;
+    let next = 0;
+    await Promise.all(
+      Array.from({ length: 3 }, async () => {
+        while (next < keys.length) {
+          const i = next++;
+          const day = await this.getDay(keys[i], { force: i < forceFirst });
+          if (!day) continue;
+          if (day.source === 'aladhan' || day.source === 'cache') online++;
+          else offline++;
+          if (wantsOnline && day.warnings.length) {
+            onlineFailed = true;
+            firstWarning ??= day.warnings[0];
+          }
+        }
+      }),
+    );
+    return { days, online, offline, onlineFailed, firstWarning };
   }
 
   /** First athan-able prayer strictly after `now`. */

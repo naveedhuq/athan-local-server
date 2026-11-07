@@ -6,6 +6,7 @@ import type { Player } from './player.js';
 import type { PrayerTimeService } from './prayer/service.js';
 import type { Scheduler } from './scheduler.js';
 import type { SpeakerRegistry } from './speakers/registry.js';
+import type { SyncService } from './sync.js';
 
 export interface AppContext {
   port: number;
@@ -18,4 +19,5 @@ export interface AppContext {
   player: Player;
   scheduler: Scheduler;
   webhook: WebhookNotifier;
+  sync: SyncService;
 }

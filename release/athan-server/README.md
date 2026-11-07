@@ -7,6 +7,8 @@ A self-hosted athan (adhan) server for any always-on computer: Raspberry Pi, PC,
 - **Per-prayer control**: skip any prayer (e.g. Fajr), choose athan, speakers, volume, minute offset, weekdays, quiet-hours behaviour.
 - **Prayer times**: [Aladhan](https://aladhan.com/prayer-times-api) (16 calculation methods, cached) with automatic fallback to built-in offline calculation ([adhan-js](https://github.com/batoulapps/adhan-js)); optional fixed mosque timetable; Hanafi/standard Asr; high-latitude rules.
 - **Location**: city search (Open-Meteo geocoding), detect by IP/device, or raw coordinates. Time zone is derived offline.
+- **Daily sync** (default 3:00 AM local time): refreshes prayer times for the current month plus the next 5 months (configurable), rescans for speakers, and updates the Islamic calendar. Catches up if the server was off, retries if the internet was down.
+- **Calendar**: month grid and table of prayer times with Hijri dates and Islamic events (Ramadan, both Eids, Ashura, Laylat al-Qadr…), plus a Hijri date adjustment for local moon sighting.
 - **Athan library**: upload audio, or download from a link; preview in the browser.
 - **Quiet hours, pause/snooze, master switch**, **MQTT + Home Assistant discovery**, **webhooks** (ntfy etc.).
 

@@ -97,6 +97,22 @@ export const configSchema = z.object({
         .prefault({}),
     })
     .prefault({}),
+  calendar: z
+    .object({
+      /** shift Hijri dates by whole days to match your local moon sighting */
+      hijriAdjust: z.number().int().min(-2).max(2).default(0),
+    })
+    .prefault({}),
+  /** Daily housekeeping: refresh prayer times from the online source and rescan for speakers */
+  sync: z
+    .object({
+      enabled: z.boolean().default(true),
+      /** local time at the location, HH:mm */
+      time: hhmm.default('03:00'),
+      /** prepare prayer times for the current month plus this many following months */
+      monthsAhead: z.number().int().min(0).max(12).default(5),
+    })
+    .prefault({}),
   server: z.object({ publicUrl: z.string().nullable().default(null) }).prefault({}),
 });
 

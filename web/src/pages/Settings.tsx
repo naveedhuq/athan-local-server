@@ -1,10 +1,10 @@
 import type { Location } from '@server/api-types';
 import type { Config } from '@server/schema';
-import { useMutation } from '@tanstack/react-query';
-import { Bell, Calculator, Cpu, MapPin, Moon, Palette, Plug, Send } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Bell, Calculator, CalendarDays, Cpu, MapPin, Moon, Palette, Plug, RefreshCw, Send } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { LocationPicker } from '@/components/LocationPicker';
-import { api, useConfig, useMethods, useSaveConfig, useSystem } from '@/lib/api';
+import { api, useConfig, useMethods, useSaveConfig, useSync, useSystem } from '@/lib/api';
 import { LABEL, TIME_LIST } from '@/lib/format';
 import { usePrefs } from '@/lib/prefs';
 import { useToast } from '@/lib/toast';
@@ -34,6 +34,8 @@ export function Settings() {
       <div className="grid max-w-3xl gap-5">
         <LocationSection cfg={cfg} />
         <CalculationSection cfg={cfg} />
+        <CalendarSection cfg={cfg} />
+        <SyncSection cfg={cfg} />
         <QuietSection cfg={cfg} />
         <IntegrationsSection cfg={cfg} />
         <AppearanceSection />
@@ -281,6 +283,91 @@ function SystemSection({ cfg }: { cfg: Config }) {
         </Field>
       </div>
       <Notice className="mt-4 flex items-start gap-2"><Bell className="mt-0.5 size-4 shrink-0" /> This UI has no login. Only expose it on your home network.</Notice>
+    </Section>
+  );
+}
+
+function CalendarSection({ cfg }: { cfg: Config }) {
+  const save = useSaveConfig();
+  const adj = cfg.calendar.hijriAdjust;
+  return (
+    <Section icon={<CalendarDays className="size-5" />} title="Islamic calendar" hint="Used for Hijri dates, Ramadan, Eid and the other events on the home screen and calendar.">
+      <Field label="Hijri date adjustment" hint="Hijri dates follow the Umm al-Qura calendar. If your community sights the moon locally and starts Ramadan or Eid a day earlier or later, shift the dates here.">
+        <Segmented
+          value={String(adj) as '-2' | '-1' | '0' | '1' | '2'}
+          onChange={(v) => save.mutate({ calendar: { hijriAdjust: Number(v) } })}
+          options={[{ value: '-2', label: '−2' }, { value: '-1', label: '−1' }, { value: '0', label: 'None' }, { value: '1', label: '+1' }, { value: '2', label: '+2' }]}
+        />
+      </Field>
+    </Section>
+  );
+}
+
+function SyncSection({ cfg }: { cfg: Config }) {
+  const save = useSaveConfig();
+  const qc = useQueryClient();
+  const toast = useToast();
+  const { data: sync } = useSync();
+  const run = useMutation({
+    mutationFn: () => api('/sync', { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sync'] }),
+    onError: (e) => toast.error((e as Error).message),
+  });
+  // refresh other data once a sync finishes
+  const [wasRunning, setWasRunning] = useState(false);
+  useEffect(() => {
+    if (sync?.running) setWasRunning(true);
+    else if (wasRunning) {
+      setWasRunning(false);
+      for (const k of ['speakers', 'state', 'times-month', 'log']) qc.invalidateQueries({ queryKey: [k] });
+    }
+  }, [sync?.running, wasRunning, qc]);
+
+  const tz = sync?.timezone;
+  const when = (iso: string) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short', timeZone: tz }).format(new Date(iso));
+  const s = cfg.sync;
+  return (
+    <Section icon={<RefreshCw className="size-5" />} title="Daily sync" hint="Refreshes prayer times, rescans for speakers and updates the Islamic calendar, so everything is ready even if the internet is down later.">
+      <div className="space-y-4">
+        <Row title="Sync every day" hint="Runs at the time below, in your location’s time zone. If the server was off then, it catches up when it starts.">
+          <Switch checked={s.enabled} onChange={(v) => save.mutate({ sync: { enabled: v } })} label="Enable daily sync" />
+        </Row>
+        {s.enabled && (
+          <div className="animate-fade grid gap-4 sm:grid-cols-2">
+            <Field label="Time" hint={tz ? `Local time (${tz})` : undefined}>
+              <Input type="time" value={s.time} onChange={(e) => e.target.value && save.mutate({ sync: { time: e.target.value } })} />
+            </Field>
+            <Field label="Prepare ahead" hint="Prayer times are fetched for the current month plus this many months.">
+              <Select value={s.monthsAhead} onChange={(e) => save.mutate({ sync: { monthsAhead: Number(e.target.value) } })}>
+                {Array.from({ length: 13 }, (_, n) => (
+                  <option key={n} value={n}>{n === 0 ? 'Current month only' : n === 5 ? 'Current month + 5 months (default)' : `Current month + ${n} month${n === 1 ? '' : 's'}`}</option>
+                ))}
+              </Select>
+            </Field>
+          </div>
+        )}
+
+        <div className="rounded-2xl border border-line bg-surface-2/60 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 text-sm">
+              <div className="font-medium">
+                {sync?.running ? 'Syncing…' : sync?.lastRun ? `Last sync ${when(sync.lastRun.at)}` : 'Not synced yet'}
+                {sync?.lastRun && !sync.running && <Badge tone={sync.lastRun.ok ? 'ok' : 'gold'} className="ml-2">{sync.lastRun.ok ? 'OK' : 'Warnings'}</Badge>}
+              </div>
+              <div className="text-xs text-muted">{sync?.nextRun && s.enabled ? `Next sync ${when(sync.nextRun)}` : s.enabled ? 'Set a location to schedule syncs' : 'Daily sync is off'}</div>
+            </div>
+            <Button variant="outline" size="sm" icon={<RefreshCw className={sync?.running ? 'size-4 animate-spin' : 'size-4'} />} onClick={() => run.mutate()} disabled={!!sync?.running || run.isPending}>
+              Sync now
+            </Button>
+          </div>
+          {sync?.lastRun && (
+            <ul className="mt-3 space-y-1.5 border-t border-line pt-3 text-xs leading-relaxed text-muted">
+              {sync.lastRun.details.map((d, i) => <li key={i}>{d}</li>)}
+              <li className="text-[11px]">Took {(sync.lastRun.durationMs / 1000).toFixed(1)} s · {sync.lastRun.trigger === 'manual' ? 'run manually' : sync.lastRun.trigger === 'catch-up' ? 'catch-up run' : 'scheduled'}</li>
+            </ul>
+          )}
+        </div>
+      </div>
     </Section>
   );
 }

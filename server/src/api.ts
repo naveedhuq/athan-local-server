@@ -246,6 +246,14 @@ export async function registerApi(app: FastifyInstance, ctx: AppContext) {
     }
   });
 
+  /* ───────────── daily sync ───────────── */
+  app.get('/api/sync', async () => ctx.sync.status());
+  app.post('/api/sync', async () => {
+    if (ctx.sync.status().running) throw httpError(409, 'A sync is already running.');
+    void ctx.sync.run('manual'); // runs in the background; the UI polls /api/sync
+    return { ...ctx.sync.status(), running: true };
+  });
+
   /* ───────────── activity + system ───────────── */
   app.get('/api/log', async () => bus.recent(50));
 

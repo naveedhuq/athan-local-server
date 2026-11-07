@@ -1,6 +1,7 @@
 import mqtt, { type MqttClient } from 'mqtt';
 import type { Config, ConfigStore } from '../config.js';
 import type { EventBus, LogEntry } from '../events.js';
+import { upcomingEvents } from '../hijri.js';
 import type { Player } from '../player.js';
 import type { PrayerTimeService } from '../prayer/service.js';
 
@@ -84,6 +85,8 @@ export class MqttBridge {
       this.client?.publish(`homeassistant/${component}/athan_${id}/config`, JSON.stringify({ ...common, unique_id: `athan_${id}`, ...payload }), { retain: true });
     pub('sensor', 'next_prayer', { name: 'Next prayer', state_topic: `${p}/state`, value_template: '{{ value_json.next_prayer }}', icon: 'mdi:mosque' });
     pub('sensor', 'next_prayer_time', { name: 'Next prayer time', state_topic: `${p}/state`, value_template: '{{ value_json.next_prayer_at }}', device_class: 'timestamp' });
+    pub('sensor', 'next_islamic_event', { name: 'Next Islamic event', state_topic: `${p}/state`, value_template: '{{ value_json.next_event }}', icon: 'mdi:calendar-star' });
+    pub('sensor', 'next_islamic_event_date', { name: 'Next Islamic event date', state_topic: `${p}/state`, value_template: '{{ value_json.next_event_date }}', icon: 'mdi:calendar' });
     pub('binary_sensor', 'playing', { name: 'Athan playing', state_topic: `${p}/state`, value_template: '{{ "ON" if value_json.playing else "OFF" }}', icon: 'mdi:volume-high' });
     pub('switch', 'enabled', { name: 'Athan enabled', state_topic: `${p}/state`, value_template: '{{ "ON" if value_json.enabled else "OFF" }}', command_topic: `${p}/enabled/set`, icon: 'mdi:bell-ring' });
     pub('button', 'stop', { name: 'Stop athan', command_topic: `${p}/stop/set`, payload_press: 'PRESS', icon: 'mdi:stop' });
@@ -94,9 +97,12 @@ export class MqttBridge {
     const cfg: Config = this.store.get();
     const next = await this.times.next().catch(() => null);
     const ps = this.player.getState();
+    const tz = cfg.location?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const todayKey = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date());
+    const ev = upcomingEvents(todayKey, 1, cfg.calendar.hijriAdjust)[0];
     this.client.publish(
       `${cfg.integrations.mqtt.topicPrefix}/state`,
-      JSON.stringify({ enabled: cfg.enabled, playing: ps.status === 'playing', prayer: ps.prayer, next_prayer: next?.prayer ?? null, next_prayer_at: next?.at ?? null }),
+      JSON.stringify({ enabled: cfg.enabled, playing: ps.status === 'playing', prayer: ps.prayer, next_prayer: next?.prayer ?? null, next_prayer_at: next?.at ?? null, next_event: ev?.event.name ?? null, next_event_date: ev?.date ?? null }),
       { retain: true },
     );
   }

@@ -7,7 +7,7 @@ const target = process.env.API_URL ?? 'http://localhost:8080';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
+  resolve: { alias: { '@': path.resolve(__dirname, 'src'), '@server': path.resolve(__dirname, '../server/src') } },
   server: {
     port: 5173,
     host: true,

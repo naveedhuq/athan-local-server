@@ -61,6 +61,11 @@ export class Scheduler extends EventEmitter {
     store.on('change', () => (this.builtAt = 0));
   }
 
+  /** Drop the cached schedule so it is rebuilt on the next tick. */
+  invalidate() {
+    this.builtAt = 0;
+  }
+
   start() {
     this.timer = setInterval(() => void this.tick(), 1000);
     void this.tick();

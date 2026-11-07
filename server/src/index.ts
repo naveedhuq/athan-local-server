@@ -21,6 +21,7 @@ import { LocalDriver } from './speakers/local.js';
 import { MOCK_SPEAKERS } from './speakers/mock.js';
 import { SpeakerRegistry } from './speakers/registry.js';
 import { SonosDriver } from './speakers/sonos.js';
+import { SyncService } from './sync.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const version = (() => {
@@ -42,9 +43,10 @@ const times = new PrayerTimeService(store);
 const player = new Player(store, registry, library, bus, port);
 const scheduler = new Scheduler(store, times, player, library, registry, bus);
 const webhook = new WebhookNotifier(store, bus);
+const sync = new SyncService(store, times, registry, scheduler, bus);
 const mqttBridge = new MqttBridge(store, bus, player, times, version);
 
-const ctx: AppContext = { port, version, store, bus, times, library, registry, player, scheduler, webhook };
+const ctx: AppContext = { port, version, store, bus, times, library, registry, player, scheduler, webhook, sync };
 
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? 'info' }, bodyLimit: 1024 * 1024 });
 await app.register(fastifyMultipart);
@@ -73,6 +75,7 @@ registry.register(new LocalDriver());
 if (process.env.ATHAN_MOCK === '1') for (const s of MOCK_SPEAKERS) registry.upsert(s);
 
 scheduler.start();
+sync.start();
 mqttBridge.start();
 
 await app.listen({ port, host });
@@ -80,6 +83,7 @@ bus.log('info', `Athan server ${version} listening on port ${port} (data: ${DATA
 
 const shutdown = () => {
   scheduler.stop();
+  sync.stop();
   mqttBridge.stop();
   registry.stop();
   player.stop();

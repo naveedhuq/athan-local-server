@@ -7,6 +7,7 @@ import { offlineProvider, parseAladhanTimings } from '../src/prayer/providers.js
 import { PrayerTimeService } from '../src/prayer/service.js';
 import { addDays, dateKey, inQuietWindow, zonedTime } from '../src/prayer/tz.js';
 import { makeLocation } from '../src/location.js';
+import { isSyncDue, nextSyncAt } from '../src/sync.js';
 
 const nyc = makeLocation('New York', 40.7128, -74.006, 'US');
 const calc = { sources: ['offline' as const], method: 'isna', madhab: 'shafi' as const, highLatitudeRule: 'auto' as const, fixedTimes: {} };
@@ -107,5 +108,52 @@ describe('config', () => {
     expect(store.getPublic().integrations.mqtt.password).toBe('********');
     store.update({ integrations: { mqtt: { password: '********', username: 'u' } } });
     expect(store.get().integrations.mqtt.password).toBe('secret');
+  });
+});
+
+describe('daily sync', () => {
+  const tz = 'America/New_York';
+  const at = (iso: string) => new Date(iso);
+  it('is not due before the configured local time', () => {
+    expect(isSyncDue(at('2026-07-01T06:59:00Z'), tz, '03:00', null, 0)).toBe(false); // 02:59 local
+  });
+  it('is due after the time if not yet done today, and catches up later in the day', () => {
+    expect(isSyncDue(at('2026-07-01T07:00:00Z'), tz, '03:00', null, 0)).toBe(true); // 03:00 local
+    expect(isSyncDue(at('2026-07-01T20:00:00Z'), tz, '03:00', '2026-06-30', 0)).toBe(true); // 16:00, missed
+  });
+  it('is not due once done today, and waits 30 min after a failed attempt', () => {
+    expect(isSyncDue(at('2026-07-01T20:00:00Z'), tz, '03:00', '2026-07-01', 0)).toBe(false);
+    const attempt = at('2026-07-01T07:00:00Z').getTime();
+    expect(isSyncDue(at('2026-07-01T07:10:00Z'), tz, '03:00', null, attempt)).toBe(false);
+    expect(isSyncDue(at('2026-07-01T07:31:00Z'), tz, '03:00', null, attempt)).toBe(true);
+  });
+  it('computes the next run in the location time zone', () => {
+    expect(nextSyncAt(at('2026-07-01T05:00:00Z'), tz, '03:00', null)).toBe('2026-07-01T07:00:00.000Z');
+    expect(nextSyncAt(at('2026-07-01T09:00:00Z'), tz, '03:00', '2026-07-01')).toBe('2026-07-02T07:00:00.000Z');
+  });
+  it('force-refreshes online times instead of using the cache', async () => {
+    const store = tmpStore();
+    store.update({ location: nyc, calculation: { sources: ['aladhan', 'offline'], method: 'isna' } });
+    let calls = 0;
+    const svc = new PrayerTimeService(store, { aladhan: (i) => { calls++; return offlineProvider(i) && { ...offlineProvider(i), source: 'aladhan' as const }; } });
+    await svc.getDay('2026-07-01');
+    await svc.getDay('2026-07-01');
+    expect(calls).toBe(1); // second read came from cache
+    const r = await svc.refreshRange('2026-07-01', 3);
+    expect(calls).toBe(4); // 1 + three forced fetches
+    expect(r).toMatchObject({ days: 3, online: 3, offline: 0, onlineFailed: false });
+  });
+
+  it('only force-refreshes the first days of a long range and fills the rest from cache', async () => {
+    const store = tmpStore();
+    store.update({ location: nyc, calculation: { sources: ['aladhan', 'offline'], method: 'karachi' } });
+    let calls = 0;
+    const svc = new PrayerTimeService(store, { aladhan: (i) => { calls++; return { ...offlineProvider(i), source: 'aladhan' as const }; } });
+    for (const d of ['2026-07-01', '2026-07-02', '2026-07-03', '2026-07-04']) await svc.getDay(d);
+    expect(calls).toBe(4);
+    await svc.refreshRange('2026-07-01', 4, 2); // 2 forced, 2 served from cache
+    expect(calls).toBe(6);
+    await svc.refreshRange('2026-07-01', 6, 2); // 2 forced + 2 new days fetched, 2 cached
+    expect(calls).toBe(10);
   });
 });

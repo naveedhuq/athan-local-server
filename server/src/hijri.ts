@@ -13,10 +13,13 @@ export interface Hijri {
 
 const fmt = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { timeZone: 'UTC', day: 'numeric', month: 'numeric', year: 'numeric' });
 
-/** Hijri date of a civil (Gregorian) day, given as "YYYY-MM-DD". */
-export function hijriOf(dateKey: string): Hijri {
+/**
+ * Hijri date of a civil (Gregorian) day, given as "YYYY-MM-DD".
+ * `adjust` shifts the Hijri date by whole days (−2…+2) to match local moon sighting.
+ */
+export function hijriOf(dateKey: string, adjust = 0): Hijri {
   const [y, m, d] = dateKey.split('-').map(Number);
-  const parts = fmt.formatToParts(new Date(Date.UTC(y, m - 1, d, 12)));
+  const parts = fmt.formatToParts(new Date(Date.UTC(y, m - 1, d + adjust, 12)));
   const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
   return { year: get('year') || get('relatedYear'), month: get('month'), day: get('day') };
 }
@@ -70,11 +73,11 @@ export const addDaysKey = (key: string, n: number) => {
 };
 
 /** The next primary events after (and including) `fromKey`. */
-export function upcomingEvents(fromKey: string, count = 5): Array<{ date: string; daysAway: number; event: IslamicEvent; hijri: Hijri }> {
+export function upcomingEvents(fromKey: string, count = 5, adjust = 0): Array<{ date: string; daysAway: number; event: IslamicEvent; hijri: Hijri }> {
   const out: Array<{ date: string; daysAway: number; event: IslamicEvent; hijri: Hijri }> = [];
   for (let i = 0; i < 420 && out.length < count; i++) {
     const date = addDaysKey(fromKey, i);
-    const h = hijriOf(date);
+    const h = hijriOf(date, adjust);
     for (const event of eventsFor(h)) if (event.primary) out.push({ date, daysAway: i, event, hijri: h });
   }
   return out;
