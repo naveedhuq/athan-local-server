@@ -54,7 +54,9 @@ export default function App() {
   const { pathname } = useLocation();
   const { data: state } = useAppState();
   useLiveUpdates(setConnected);
-  useEffect(() => window.scrollTo({ top: 0 }), [pathname]);
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [pathname]);
 
   return (
     <div className="min-h-dvh lg:pl-64">

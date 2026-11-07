@@ -170,8 +170,12 @@ function IntegrationsSection({ cfg }: { cfg: Config }) {
   const w = cfg.integrations.webhook;
   const [mqtt, setMqtt] = useState(m);
   const [hook, setHook] = useState(w);
-  useEffect(() => setMqtt(m), [m]);
-  useEffect(() => setHook(w), [w]);
+  useEffect(() => {
+    setMqtt(m);
+  }, [m]);
+  useEffect(() => {
+    setHook(w);
+  }, [w]);
 
   const test = useMutation({
     mutationFn: () => api('/integrations/webhook/test', { method: 'POST' }),
