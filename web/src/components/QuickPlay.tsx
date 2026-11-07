@@ -5,7 +5,7 @@ import { api, useAppState, useAthans, useConfig, useSpeakers } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { useToast } from '@/lib/toast';
 import { Button, Card, Equalizer, SectionTitle } from '@/ui';
-import { SpeakerArt, pickKind } from './SpeakerArt';
+import { SpeakerArt, pickKind, type ArtKind } from './SpeakerArt';
 import { AthanSelect } from './pickers';
 
 const KEY = 'athan.quickplay.athan';
@@ -79,7 +79,7 @@ export function QuickPlay() {
                   )}
                 >
                   <span className={cn('relative flex size-14 shrink-0 items-center justify-center rounded-xl bg-surface-2', active && 'bg-accent-soft')}>
-                    <SpeakerArt kind={pickKind(s.type, s.name, s.model)} size={46} active={active} dim={!s.online} />
+                    <SpeakerArt kind={(s.art as ArtKind | null) ?? pickKind(s.type, s.name, s.model)} size={46} active={active} dim={!s.online} />
                     {active && <Equalizer className="absolute -right-1 -top-1 h-4 rounded-md bg-accent px-1 py-0.5 text-accent-fg" />}
                   </span>
                   <span className="min-w-0 flex-1">

@@ -37,6 +37,7 @@ export interface SpeakerView extends Speaker {
   enabled: boolean;
   volume: number;
   nickname: string | null;
+  art: string | null;
 }
 
 export interface DriverStatus {

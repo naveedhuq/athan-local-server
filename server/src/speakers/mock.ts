@@ -13,6 +13,12 @@ export const MOCK_SPEAKERS: Array<Omit<Speaker, 'lastSeen'>> = [
   { id: 'airplay:mock-homepod', type: 'airplay', name: 'HomePod mini', host: '192.168.1.41', port: 7000, model: 'AudioAccessory5,1', mock: true },
   { id: 'airplay:mock-homepod2', type: 'airplay', name: 'Master Bedroom', host: '192.168.1.42', port: 7000, model: 'AudioAccessory6,1', mock: true },
   { id: 'airplay:mock-atv', type: 'airplay', name: 'Family Room Apple TV', host: '192.168.1.43', port: 7000, model: 'AppleTV14,1', mock: true },
+  { id: 'airplay:mock-jbl', type: 'airplay', name: 'Pool JBL', host: '192.168.1.51', port: 7000, model: 'JBL Charge 5', mock: true },
+  { id: 'airplay:mock-marshall', type: 'airplay', name: 'Den', host: '192.168.1.52', port: 7000, model: 'Marshall Stanmore III', mock: true },
+  { id: 'airplay:mock-denon', type: 'airplay', name: 'Theater Receiver', host: '192.168.1.53', port: 7000, model: 'Denon AVR-X3800H', mock: true },
+  { id: 'cast:mock-kef', type: 'cast', name: 'Study', host: '192.168.1.54', port: 8009, model: 'KEF LSX II', mock: true },
+  { id: 'cast:mock-chromecast', type: 'cast', name: 'Guest Room TV', host: '192.168.1.55', port: 8009, model: 'Chromecast', mock: true },
+  { id: 'airplay:mock-bo', type: 'airplay', name: 'Hallway', host: '192.168.1.56', port: 7000, model: 'Beosound A1', mock: true },
   { id: 'cast:mock-tv', type: 'cast', name: 'LG Soundbar', host: '192.168.1.35', port: 8009, model: 'LG Soundbar', mock: true },
 ];
 

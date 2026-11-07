@@ -3,7 +3,7 @@ import os from 'node:os';
 import { z, ZodError } from 'zod';
 import { MAX_BYTES } from './athans.js';
 import { CATALOG } from './catalog.js';
-import { PRAYERS, type Prayer } from './config.js';
+import { ART_KINDS, PRAYERS, type Prayer } from './config.js';
 import type { AppContext } from './context.js';
 import { locateByIp, makeLocation, searchPlaces } from './location.js';
 import { lanAddress, baseUrl } from './net.js';
@@ -36,6 +36,7 @@ export async function registerApi(app: FastifyInstance, ctx: AppContext) {
       enabled: speakerEnabled(cfg, s),
       volume: speakerVolume(cfg, s),
       nickname: cfg.speakers[s.id]?.nickname ?? null,
+      art: cfg.speakers[s.id]?.art ?? null,
     };
   };
 
@@ -124,7 +125,7 @@ export async function registerApi(app: FastifyInstance, ctx: AppContext) {
     const sp = registry.get(id);
     if (!sp) throw httpError(404, 'Unknown speaker');
     const b = z
-      .object({ enabled: z.boolean().optional(), volume: z.number().min(0).max(100).optional(), nickname: z.string().max(60).nullable().optional() })
+      .object({ enabled: z.boolean().optional(), volume: z.number().min(0).max(100).optional(), nickname: z.string().max(60).nullable().optional(), art: z.enum(ART_KINDS).nullable().optional() })
       .parse(req.body);
     store.update({ speakers: { [id]: b } });
     return speakerView(sp);

@@ -6,26 +6,47 @@ import { cn } from '@/lib/cn';
  * Original vector illustrations of common speaker/TV shapes, picked from the
  * model and name that discovery reports. Not manufacturer artwork.
  */
-export type ArtKind =
-  | 'sonos-one' | 'sonos-era' | 'sonos-roam' | 'sonos-move' | 'soundbar' | 'sub' | 'lamp'
-  | 'nest-mini' | 'google-home' | 'nest-hub' | 'tv' | 'group'
-  | 'homepod' | 'homepod-mini' | 'apple-tv' | 'pi';
+import type { ArtKind } from '@server/schema';
+export type { ArtKind };
+
+/** Brand shown on the card badge, guessed from the name/model. */
+const BRANDS: Array<[RegExp, string]> = [
+  [/sonos|symfonisk/, 'Sonos'], [/homepod|appletv|apple tv|audioaccessory/, 'Apple'], [/nest|google|chromecast/, 'Google'],
+  [/bose/, 'Bose'], [/\bjbl\b/, 'JBL'], [/marshall/, 'Marshall'], [/heos/, 'HEOS'], [/denon/, 'Denon'], [/marantz/, 'Marantz'],
+  [/yamaha|musiccast/, 'Yamaha'], [/bang|olufsen|beosound|beoplay|\bb&o\b/, 'Bang & Olufsen'], [/\bkef\b|\blsx\b|\bls50\b/, 'KEF'],
+  [/klipsch/, 'Klipsch'], [/polk/, 'Polk'], [/bluesound|powernode|\bnode\b/, 'Bluesound'], [/samsung/, 'Samsung'], [/\blg\b|webos/, 'LG'],
+  [/sony|bravia/, 'Sony'], [/vizio/, 'Vizio'], [/roku/, 'Roku'], [/\btcl\b/, 'TCL'], [/philips/, 'Philips'], [/harman|citation|onyx/, 'Harman Kardon'],
+  [/libratone/, 'Libratone'], [/naim|mu-so/, 'Naim'], [/cambridge/, 'Cambridge Audio'], [/onkyo/, 'Onkyo'], [/pioneer/, 'Pioneer'],
+  [/hisense/, 'Hisense'], [/panasonic/, 'Panasonic'], [/ultimate ears|\bue\b|megaboom|wonderboom/, 'Ultimate Ears'], [/bowers|wilkins|zeppelin/, 'Bowers & Wilkins'],
+  [/dali\b/, 'DALI'], [/elac/, 'ELAC'], [/arcam/, 'Arcam'], [/nad\b/, 'NAD'], [/technics/, 'Technics'], [/teufel/, 'Teufel'], [/devialet|phantom/, 'Devialet'],
+];
+
+export function brandOf(name: string, model: string | null): string | null {
+  const s = `${name} ${model ?? ''}`.toLowerCase();
+  return BRANDS.find(([re]) => re.test(s))?.[1] ?? null;
+}
 
 export function pickKind(type: SpeakerType, name: string, model: string | null): ArtKind {
   const s = `${name} ${model ?? ''}`.toLowerCase();
   if (type === 'local') return 'pi';
-  if (/soundbar|sound bar|\bbeam\b|\barc\b|\bray\b|playbar|playbase|\bhw-|\bhtb/.test(s)) return 'soundbar';
-  if (/\bsub\b/.test(s)) return 'sub';
+  // Specific product families first
+  if (/soundbar|sound bar|\bbeam\b|\barc\b|\bray\b|playbar|playbase|\bhw-|\bhtb|\bbar\b|mu-so(?! qb)|zeppelin|smart soundbar/.test(s)) return 'soundbar';
+  if (/\bsub\b|subwoofer/.test(s)) return 'sub';
   if (/group/.test(s)) return 'group';
   if (/lamp|symfonisk/.test(s)) return 'lamp';
   if (/appletv|apple tv/.test(s)) return 'apple-tv';
   if (/homepod mini|audioaccessory5|audioaccessory4/.test(s)) return 'homepod-mini';
   if (/homepod|audioaccessory/.test(s)) return 'homepod';
-  if (/\btv\b|bravia|webos|roku|vizio|chromecast|display|television|samsung|\blg\b|android tv/.test(s)) {
-    if (/nest hub|home hub|smart display|google nest hub/.test(s)) return 'nest-hub';
-    return 'tv';
-  }
-  if (/hub|show\b/.test(s)) return 'nest-hub';
+  if (/chromecast|google tv streamer|cast dongle|roku (stick|express|ultra)/.test(s)) return /\btv\b|television/.test(name.toLowerCase()) ? 'tv' : 'chromecast';
+  if (/marshall|stanmore|acton|woburn|uxbridge|emberton/.test(s)) return 'amp';
+  if (/beosound|beoplay|bang|olufsen|\bb&o\b|\ba1\b|\ba9\b|devialet|phantom/.test(s)) return 'disc';
+  if (/soundlink|charge|flip|xtreme|boombox|clip|onyx|megaboom|wonderboom|go \d|portable|emberton/.test(s)) return 'portable';
+  if (/avr|receiver|\brx-|denon|marantz|yamaha|onkyo|pioneer|integra|musiccast|powernode|\bnode\b|vault|arcam|\bnad\b|amplifier|streamer/.test(s)) return 'receiver';
+  if (/\blsx\b|\bls50\b|\bkef\b|klipsch|polk|cambridge|dali\b|elac|bowers|bookshelf|teufel|\bmu-so qb|\bwiim\b/.test(s)) return 'bookshelf';
+  if (/tower|floor|\blink\b|jbl link|citation 500|heos 7|heos 5|heos 3|heos 1/.test(s)) return /heos [135]/.test(s) ? 'sonos-one' : 'tower';
+  if (/nest hub|home hub|smart display|\bshow\b/.test(s)) return 'nest-hub';
+  if (/\btv\b|bravia|webos|roku|vizio|display|television|samsung|\blg\b|android tv|tcl|hisense|philips|panasonic|sony/.test(s)) return 'tv';
+  if (/hub/.test(s)) return 'nest-hub';
   if (type === 'sonos') {
     if (/roam/.test(s)) return 'sonos-roam';
     if (/move|play:5|five|play:3/.test(s)) return 'sonos-move';
@@ -34,11 +55,20 @@ export function pickKind(type: SpeakerType, name: string, model: string | null):
   }
   if (type === 'cast') {
     if (/mini|home mini|nest mini|puck/.test(s)) return 'nest-mini';
-    return 'google-home';
+    if (/nest audio|google home/.test(s)) return 'google-home';
+    return brandOf(name, model) && brandOf(name, model) !== 'Google' ? 'sonos-era' : 'google-home';
   }
-  if (type === 'airplay') return 'homepod-mini';
+  if (type === 'airplay') return brandOf(name, model) && brandOf(name, model) !== 'Apple' ? 'sonos-era' : 'homepod-mini';
   return 'sonos-one';
 }
+
+export const ART_LABEL: Record<ArtKind, string> = {
+  'sonos-one': 'Compact speaker', 'sonos-era': 'Wide speaker', 'sonos-roam': 'Pocket speaker', 'sonos-move': 'Carry speaker',
+  soundbar: 'Soundbar', sub: 'Subwoofer', lamp: 'Lamp speaker', 'nest-mini': 'Smart puck', 'google-home': 'Smart cylinder',
+  'nest-hub': 'Smart display', tv: 'TV', group: 'Speaker group', homepod: 'Tall mesh speaker', 'homepod-mini': 'Round mesh speaker',
+  'apple-tv': 'Streaming box', pi: 'Raspberry Pi', tower: 'Tower speaker', bookshelf: 'Bookshelf speaker', portable: 'Portable speaker',
+  receiver: 'Receiver / streamer', chromecast: 'Streaming stick', amp: 'Amp-style speaker', disc: 'Disc speaker',
+};
 
 interface Tone {
   top: string;
@@ -115,6 +145,27 @@ export function SpeakerArt({ kind, size = 120, className, active, dim }: { kind:
       break;
     case 'homepod-mini':
       art = (<><Shell x={28} y={30} w={64} h={72} rx={32} inset={6} /><ellipse cx={60} cy={42} rx={15} ry={5} fill={`url(#${id}h)`} opacity={active ? 1 : 0.9} /></>);
+      break;
+    case 'tower':
+      art = (<><Shell x={38} y={8} w={44} h={98} rx={12} grille={false} /><circle cx={60} cy={30} r={6} fill={t.grille} stroke={t.rim} /><circle cx={60} cy={72} r={17} fill={t.grille} stroke={t.rim} strokeWidth="2" /><circle cx={60} cy={72} r={7} fill={t.bot} opacity=".7" /></>);
+      break;
+    case 'bookshelf':
+      art = (<><Shell x={28} y={16} w={64} h={88} rx={8} grille={false} /><circle cx={60} cy={38} r={8} fill={t.grille} stroke={t.rim} strokeWidth="1.5" /><circle cx={60} cy={76} r={20} fill={t.grille} stroke={t.rim} strokeWidth="2" /><circle cx={60} cy={76} r={8} fill={t.bot} opacity=".7" /></>);
+      break;
+    case 'portable':
+      art = (<><rect x={12} y={46} width={96} height={46} rx={23} fill={body} stroke={t.rim} /><rect x={22} y={46} width={76} height={46} fill={dots} opacity=".5" /><rect x={12} y={46} width={96} height={46} rx={23} fill={shine} /><circle cx={22} cy={69} r={9} fill={t.grille} opacity=".8" /><circle cx={98} cy={69} r={9} fill={t.grille} opacity=".8" /><path d="M96 52c8-14 14-14 14-4" fill="none" stroke={t.bot} strokeWidth="3" strokeLinecap="round" /></>);
+      break;
+    case 'receiver':
+      art = (<><rect x={6} y={48} width={108} height={42} rx={4} fill={body} stroke={t.rim} /><rect x={6} y={48} width={108} height={42} rx={4} fill={shine} /><rect x={36} y={55} width={48} height={14} rx={2} fill="#0b1b1f" /><text x="60" y="66" textAnchor="middle" fontSize="9" fontWeight="600" fill="#7ef0dd" fontFamily="ui-monospace,monospace">STREAM</text><circle cx={20} cy={69} r={8} fill={t.bot} stroke={t.rim} /><circle cx={100} cy={69} r={8} fill={t.bot} stroke={t.rim} />{[40, 50, 60, 70, 80].map((x) => (<rect key={x} x={x - 3} y={76} width={6} height={5} rx={1} fill={t.grille} opacity=".8" />))}</>);
+      break;
+    case 'chromecast':
+      art = (<><path d="M86 38c14-14 22 0 24 18" fill="none" stroke={t.bot} strokeWidth="5" strokeLinecap="round" /><circle cx={58} cy={64} r={36} fill={body} stroke={t.rim} /><circle cx={58} cy={64} r={36} fill={shine} /><circle cx={58} cy={64} r={13} fill="none" stroke="#fff" strokeOpacity=".35" strokeWidth="3" /><circle cx={58} cy={64} r={4} fill="#fff" fillOpacity=".5" /></>);
+      break;
+    case 'amp':
+      art = (<><rect x={12} y={22} width={96} height={76} rx={5} fill="#171717" stroke="#000" /><rect x={12} y={22} width={96} height={76} rx={5} fill={shine} /><rect x={17} y={27} width={86} height={66} rx={3} fill="none" stroke="#d9a441" strokeWidth="1.5" /><rect x={20} y={50} width={80} height={40} rx={2} fill="#c9b690" opacity=".9" /><rect x={20} y={50} width={80} height={40} rx={2} fill={dots} opacity=".55" /><rect x={40} y={32} width={40} height={9} rx={2} fill="#d9a441" opacity=".9" />{[30, 44, 58, 72, 86].map((x) => (<circle key={x} cx={x} cy={46} r={2} fill="#d9a441" />))}</>);
+      break;
+    case 'disc':
+      art = (<><ellipse cx={60} cy={92} rx={46} ry={13} fill={t.bot} /><path d="M14 76v16c0 7 20.6 13 46 13s46-6 46-13V76z" fill={body} stroke={t.rim} /><ellipse cx={60} cy={76} rx={46} ry={20} fill={body} stroke={t.rim} /><ellipse cx={60} cy={76} rx={36} ry={14} fill={dots} opacity=".5" /><ellipse cx={60} cy={76} rx={46} ry={20} fill={shine} /></>);
       break;
     case 'group':
       art = (<>

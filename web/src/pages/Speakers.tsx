@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Play, Plus, RefreshCw, Trash2, Volume2, WifiOff } from 'lucide-react';
 import { useState } from 'react';
 import { SPEAKER_META, SpeakerIcon } from '@/components/icons';
-import { SpeakerArt, pickKind } from '@/components/SpeakerArt';
+import { ART_LABEL, SpeakerArt, brandOf, pickKind, type ArtKind } from '@/components/SpeakerArt';
 import { TestPlayDialog } from '@/components/TestPlayDialog';
 import { api, useAppState, useSaveConfig, useSpeakers } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -108,7 +108,8 @@ const HUE: Record<SpeakerType, string> = { sonos: '#f2b84b', cast: '#4f8df7', ai
 function SpeakerCard({ s, playing, onTest, onEdit }: { s: SpeakerView; playing: boolean; onTest: () => void; onEdit: () => void }) {
   const save = useSaveConfig();
   const set = (patch: { enabled?: boolean; volume?: number }) => save.mutate({ speakers: { [s.id]: patch } });
-  const kind = pickKind(s.type, s.name, s.model);
+  const kind = (s.art as ArtKind | null) ?? pickKind(s.type, s.name, s.model);
+  const brand = brandOf(s.name, s.model);
   const off = !s.enabled || !s.online;
   return (
     <Card className={cn('group flex min-w-0 flex-col overflow-hidden p-0 transition hover:-translate-y-0.5', playing && 'ring-2 ring-accent')}>
@@ -125,7 +126,7 @@ function SpeakerCard({ s, playing, onTest, onEdit }: { s: SpeakerView; playing: 
         <SpeakerArt kind={kind} size={128} active={playing} dim={off} className="relative drop-shadow-[0_10px_14px_rgba(0,0,0,.28)] transition group-hover:scale-105" />
         <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-surface/80 px-2.5 py-1 text-xs font-medium backdrop-blur">
           <SpeakerIcon type={s.type} className="size-3.5" style={{ color: HUE[s.type] }} />
-          {SPEAKER_META[s.type].label}
+          {brand ?? SPEAKER_META[s.type].label}
         </span>
         <div className="absolute right-3 top-3">
           <Switch checked={s.enabled} onChange={(v) => set({ enabled: v })} label={`Use ${s.displayName}`} />
@@ -220,10 +221,12 @@ function EditSpeaker({ s, onClose }: { s: SpeakerView | null; onClose: () => voi
   const qc = useQueryClient();
   const toast = useToast();
   const [name, setName] = useState('');
+  const [art, setArt] = useState<ArtKind | null>(null);
   const [lastId, setLastId] = useState<string | null>(null);
   if (s && s.id !== lastId) {
     setLastId(s.id);
     setName(s.nickname ?? '');
+    setArt((s.art as ArtKind | null) ?? null);
   }
   const remove = useMutation({
     mutationFn: () => api(`/speakers/${encodeURIComponent(s!.id)}`, { method: 'DELETE' }),
@@ -245,7 +248,7 @@ function EditSpeaker({ s, onClose }: { s: SpeakerView | null; onClose: () => voi
           </Button>
           <Button
             onClick={() => {
-              save.mutate({ speakers: { [s!.id]: { nickname: name.trim() || null } } });
+              save.mutate({ speakers: { [s!.id]: { nickname: name.trim() || null, art } } });
               onClose();
             }}
           >
@@ -257,6 +260,20 @@ function EditSpeaker({ s, onClose }: { s: SpeakerView | null; onClose: () => voi
       <div className="space-y-4 pb-2">
         <Field label="Display name" hint={`Leave empty to use “${s?.name}”.`}>
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={s?.name} maxLength={60} />
+        </Field>
+        <Field label="Picture" hint={s ? `Detected automatically as “${ART_LABEL[pickKind(s.type, s.name, s.model)]}”. Pick another if it looks wrong.` : undefined}>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            <button onClick={() => setArt(null)} className={cn('flex h-24 flex-col items-center justify-center gap-1 rounded-2xl border text-xs font-medium transition', art === null ? 'border-accent bg-accent-soft text-accent-strong' : 'border-line bg-surface-2 text-muted hover:text-ink')}>
+              {s && <SpeakerArt kind={pickKind(s.type, s.name, s.model)} size={52} />}
+              Automatic
+            </button>
+            {(Object.keys(ART_LABEL) as ArtKind[]).filter((k) => k !== 'pi' || s?.type === 'local').map((k) => (
+              <button key={k} onClick={() => setArt(k)} aria-label={ART_LABEL[k]} title={ART_LABEL[k]} className={cn('flex h-24 flex-col items-center justify-center gap-1 rounded-2xl border px-1 text-center text-[11px] leading-tight font-medium transition', art === k ? 'border-accent bg-accent-soft text-accent-strong' : 'border-line bg-surface-2 text-muted hover:text-ink')}>
+                <SpeakerArt kind={k} size={52} />
+                {ART_LABEL[k]}
+              </button>
+            ))}
+          </div>
         </Field>
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
           <dt className="text-muted">Type</dt>

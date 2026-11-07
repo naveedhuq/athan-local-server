@@ -5,6 +5,13 @@ export type Prayer = (typeof PRAYERS)[number];
 export const TIME_NAMES = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
 export type TimeName = (typeof TIME_NAMES)[number];
 
+export const ART_KINDS = [
+  'sonos-one', 'sonos-era', 'sonos-roam', 'sonos-move', 'soundbar', 'sub', 'lamp',
+  'nest-mini', 'google-home', 'nest-hub', 'tv', 'group', 'homepod', 'homepod-mini', 'apple-tv', 'pi',
+  'tower', 'bookshelf', 'portable', 'receiver', 'chromecast', 'amp', 'disc',
+] as const;
+export type ArtKind = (typeof ART_KINDS)[number];
+
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use HH:mm');
 
 const prayerSettings = z.object({
@@ -25,6 +32,8 @@ const speakerSettings = z.object({
   enabled: z.boolean().default(true),
   volume: z.number().min(0).max(100).default(40),
   nickname: z.string().max(60).nullable().default(null),
+  /** picture override; null = pick automatically from the model name */
+  art: z.enum(ART_KINDS).nullable().default(null),
 });
 
 const location = z.object({
