@@ -15,7 +15,7 @@ id athan >/dev/null 2>&1 || useradd --system --home /var/lib/athan --create-home
 npm ci
 npm run build
 rm -rf /opt/athan && mkdir -p /opt/athan
-cp -r package.json server web /opt/athan/
+tar --exclude=node_modules --exclude='server/src' --exclude='web/src' -cf - package.json package-lock.json server web | tar -xf - -C /opt/athan
 (cd /opt/athan && npm ci --omit=dev --workspaces --include-workspace-root)
 chown -R athan:athan /opt/athan
 install -m 644 deploy/athan.service /etc/systemd/system/athan.service
