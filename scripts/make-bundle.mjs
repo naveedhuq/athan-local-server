@@ -24,7 +24,11 @@ cpSync(path.join(root, 'server', 'dist'), path.join(out, 'server', 'dist'), { re
 cpSync(path.join(root, 'web', 'dist'), path.join(out, 'web', 'dist'), { recursive: true });
 cpSync(path.join(root, 'scripts', 'launcher.mjs'), path.join(out, 'athan.mjs'));
 cpSync(path.join(root, 'deploy', 'service'), path.join(out, 'service'), { recursive: true });
-cpSync(path.join(root, 'README.md'), path.join(out, 'README.md'));
+cpSync(path.join(root, 'LICENSE'), path.join(out, 'LICENSE'));
+writeFileSync(
+  path.join(out, 'README.txt'),
+  'Athan Server\n\nStart:    node athan.mjs   (or start.sh / start.cmd)\nAuto-start: see the service/ folder\nDocs:     https://github.com/naveedhuq/athan-local-server#readme\nLicense:  MIT (see LICENSE)\n',
+);
 
 // The bundle's root package.json must not try to build anything.
 const pkg = JSON.parse(readFileSync(path.join(out, 'package.json'), 'utf8'));

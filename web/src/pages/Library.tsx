@@ -68,7 +68,7 @@ export function Library() {
 
   return (
     <div>
-      <PageHeader title="Athan library" subtitle="Upload your own recordings or download them from a link. Files are stored on this Pi and streamed to your speakers." />
+      <PageHeader title="Athan library" subtitle="Upload your own recordings or download them from a link. Files are stored on this server and streamed to your speakers." />
 
       <div
         onDragOver={(e) => {
@@ -196,7 +196,7 @@ export function Library() {
           </>
         }
       >
-        <p className="pb-2 text-sm text-muted">“{deleting?.name}” will be removed from the Pi. Prayers using it fall back to the default athan.</p>
+        <p className="pb-2 text-sm text-muted">“{deleting?.name}” will be removed from this server. Prayers using it fall back to the default athan.</p>
       </Modal>
     </div>
   );
@@ -230,7 +230,7 @@ function AddFromUrl({ open, onClose, onDone }: { open: boolean; onClose: () => v
       }
     >
       <div className="space-y-4 pb-2">
-        <Field label="Direct link to an audio file" hint="Must end in .mp3, .m4a, .wav … The Pi downloads and keeps its own copy.">
+        <Field label="Direct link to an audio file" hint="Must end in .mp3, .m4a, .wav … The server downloads and keeps its own copy.">
           <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com/azan.mp3" inputMode="url" autoFocus />
         </Field>
         <Field label="Name (optional)"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Makkah – Fajr" /></Field>
@@ -286,7 +286,7 @@ function Recommended({ onDone }: { onDone: () => void }) {
   if (!items?.length) return null;
   return (
     <section className="mt-10">
-      <SectionTitle title="Recommended athans" hint="One tap downloads the file to your Pi (needs internet once)." className="mb-4" />
+      <SectionTitle title="Recommended athans" hint="One tap downloads the file to this server (needs internet once)." className="mb-4" />
       <Card className="divide-y divide-line">
         {items.map((c) => (
           <div key={c.id} className="flex items-center gap-3 px-5 py-3.5">

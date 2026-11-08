@@ -182,7 +182,7 @@ function PrayerDetail({
           </p>
         )}
 
-        <div className={cn('grid gap-4 p-5 sm:p-6 md:grid-cols-2', !s.enabled && 'pointer-events-none select-none opacity-50')} aria-disabled={!s.enabled}>
+        <div className={cn('grid grid-cols-1 gap-4 p-5 sm:p-6 md:grid-cols-2', !s.enabled && 'pointer-events-none select-none opacity-50')} aria-disabled={!s.enabled}>
           <Panel icon={<Moon className="size-3.5" />} title="Athan">
             <AthanSelect athans={athans} value={s.athanId} onChange={(v) => onPatch({ athanId: v })} defaultLabel="Use default athan" />
           </Panel>

@@ -1,7 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { CalendarClock, CalendarDays, Home, Library as LibraryIcon, Moon as MoonIcon, Settings as SettingsIcon, Speaker, WifiOff } from 'lucide-react';
+import { CalendarClock, CalendarDays, Home, Library as LibraryIcon, Settings as SettingsIcon, Speaker, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { Logo } from '@/components/Logo';
 import { NowPlayingBar } from '@/components/NowPlayingBar';
 import { useAppState } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -145,9 +146,7 @@ export default function App() {
 function Brand({ compact }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex size-10 items-center justify-center rounded-2xl bg-linear-to-br from-teal-400 to-teal-700 text-white shadow-card">
-        <MoonIcon className="size-5 fill-amber-100 text-amber-100" />
-      </div>
+      <Logo size={40} className="shrink-0 drop-shadow-sm" />
       <div className="leading-tight">
         <div className="text-base font-semibold tracking-tight">Athan</div>
         {!compact && <div className="text-xs text-muted">Home prayer calls</div>}

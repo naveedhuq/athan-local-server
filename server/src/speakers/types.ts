@@ -32,7 +32,7 @@ export interface SpeakerDriver {
 export const DEFAULT_VOLUME = 40;
 
 export function speakerEnabled(cfg: Config, sp: Speaker): boolean {
-  // The Pi's own audio jack is opt-in; network speakers are on by default.
+  // This computer's own audio output is opt-in; network speakers are on by default.
   return cfg.speakers[sp.id]?.enabled ?? sp.type !== 'local';
 }
 export function speakerVolume(cfg: Config, sp: Speaker): number {

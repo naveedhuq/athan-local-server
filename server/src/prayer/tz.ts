@@ -1,4 +1,4 @@
-/** Time-zone helpers built on Intl so we never depend on the Pi's own TZ setting. */
+/** Time-zone helpers built on Intl so we never depend on the host's own TZ setting. */
 
 const fmtCache = new Map<string, Intl.DateTimeFormat>();
 function fmt(tz: string): Intl.DateTimeFormat {

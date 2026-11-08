@@ -1,7 +1,7 @@
 import { networkInterfaces } from 'node:os';
 import type { Config } from './config.js';
 
-/** Best guess at the Pi's LAN address, which speakers must be able to reach. */
+/** Best guess at this machine's LAN address, which speakers must be able to reach. */
 export function lanAddress(): string {
   const candidates: string[] = [];
   for (const addrs of Object.values(networkInterfaces())) {

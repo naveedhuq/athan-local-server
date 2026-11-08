@@ -34,6 +34,10 @@ try {
   if (!sys.version) throw new Error('/api/system returned no version');
   const html = await (await get('/')).text();
   if (!html.includes('<div id="root">')) throw new Error('web UI was not served');
+  for (const f of ['/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png', '/favicon.ico', '/icon.svg']) {
+    const r = await get(f);
+    if (!r.ok) throw new Error(`${f} was not served`);
+  }
   const audio = await get('/audio/test-chime.wav');
   if (!audio.ok) throw new Error('built-in chime was not served');
 } catch (e) {

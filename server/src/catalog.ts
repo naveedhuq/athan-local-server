@@ -1,5 +1,5 @@
 /**
- * Curated athan downloads. Files are fetched by the Pi on demand (nothing is bundled).
+ * Curated athan downloads. Files are fetched by the server on demand (nothing is bundled).
  * Source: https://github.com/abodehq/Athan-MP3 (no license file is published there; for personal use).
  */
 const BASE = 'https://raw.githubusercontent.com/abodehq/Athan-MP3/master/Sounds/';

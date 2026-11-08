@@ -1,0 +1,37 @@
+import { useId } from 'react';
+
+/** The app mark: crescent, star and sound waves (same artwork as the app icon). */
+export function Logo({ size = 40, className }: { size?: number; className?: string }) {
+  const id = useId().replace(/:/g, '');
+  return (
+    <svg viewBox="0 0 512 512" width={size} height={size} className={className} role="img" aria-label="Athan">
+      <defs>
+        <linearGradient id={`${id}bg`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#2dd4bf" />
+          <stop offset=".55" stopColor="#0f9488" />
+          <stop offset="1" stopColor="#0b5a54" />
+        </linearGradient>
+        <radialGradient id={`${id}glow`} cx=".3" cy=".2" r=".9">
+          <stop offset="0" stopColor="#fff" stopOpacity=".28" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id={`${id}moon`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fffbe8" />
+          <stop offset="1" stopColor="#ffe9a8" />
+        </linearGradient>
+        <mask id={`${id}cut`}>
+          <rect width="512" height="512" fill="#fff" />
+          <circle cx="300" cy="222" r="118" fill="#000" />
+        </mask>
+      </defs>
+      <rect width="512" height="512" rx="116" fill={`url(#${id}bg)`} />
+      <rect width="512" height="512" rx="116" fill={`url(#${id}glow)`} />
+      <circle cx="232" cy="262" r="150" fill={`url(#${id}moon)`} mask={`url(#${id}cut)`} />
+      <path d="M338 142l14 36 36 14-36 14-14 36-14-36-36-14 36-14z" fill="#ffd266" />
+      <g fill="none" stroke="#fffbe8" strokeLinecap="round" strokeWidth="20">
+        <path d="M396 316a52 52 0 0 1 0 74" opacity=".95" />
+        <path d="M430 288a96 96 0 0 1 0 130" opacity=".6" />
+      </g>
+    </svg>
+  );
+}

@@ -175,7 +175,7 @@ export async function registerApi(app: FastifyInstance, ctx: AppContext) {
     try {
       return await library.addFromUrl(c.url, c.name, c.muezzin);
     } catch (err) {
-      throw httpError(502, `Download failed: ${(err as Error).message}. Check the Pi's internet connection.`);
+      throw httpError(502, `Download failed: ${(err as Error).message}. Check this server's internet connection.`);
     }
   });
   app.post('/api/athans/from-url', async (req) => {
